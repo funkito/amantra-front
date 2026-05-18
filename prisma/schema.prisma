@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  EDITOR
+  VENDEDOR
+  CLIENTE
+}
+
+enum ProductStatus {
+  PUBLISHED
+  DRAFT
+  UNPUBLISHED
+}
+
+enum ShippingMode {
+  FIXED
+  FREE
+}
+
+enum PaymentProvider {
+  BOLD
+}
+
+enum PaymentFlow {
+  DIRECT_API
+  PAYMENT_LINK
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+  FAILED
+  VOIDED
+  EXPIRED
+}
+
+enum WebhookProcessingStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  INVALID_SIGNATURE
+  ERROR
+}
+
+enum ShareNetwork {
+  WHATSAPP
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+  COPY_LINK
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(CLIENTE)
+  isActive  Boolean  @default(true)
+  orders    Order[]
+  posts     Post[]
+  shareEvents ShareEvent[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id            String           @id @default(cuid())
+  name          String
+  description   String
+  basePrice     Float
+  status        ProductStatus    @default(DRAFT)
+  shippingMode  ShippingMode     @default(FIXED)
+  shippingCost  Float            @default(0)
+  shippingNotes String?
+  images        String[]
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  tags          Tag[]            @relation("ProductTags")
+  shareEvents   ShareEvent[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  sku       String   @unique
+  size      String?
+  color     String?
+  stoneType String?
+  stock     Int      @default(0)
+  price     Float?
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[] @relation("ProductTags")
+}
+
+model Order {
+  id                   String             @id @default(cuid())
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id])
+  items                OrderItem[]
+  totalAmount          Float
+  status               String             @default("PENDING")
+  paymentStatus        PaymentStatus      @default(PENDING)
+  paymentProvider      PaymentProvider?
+  paymentFlow          PaymentFlow?
+  paymentMethod        String?
+  paymentReference     String?            @unique
+  paymentLinkId        String?            @unique
+  paymentLinkUrl       String?
+  paymentTransactionId String?            @unique
+  paymentMetadata      Json?
+  lastWebhookAt        DateTime?
+  webhookEvents        WebhookEventLog[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model OrderItem {
+  id               String          @id @default(cuid())
+  orderId          String
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId        String
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variantId        String?
+  variant          ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  quantity         Int
+  productName      String
+  productImageUrl  String?
+  variantLabel     String?
+  unitPrice        Float
+  shippingCost     Float           @default(0)
+  lineTotal        Float
+  metadata         Json?
+  createdAt        DateTime        @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([productId, createdAt])
+}
+
+model PageLayout {
+  id        String              @id @default(cuid())
+  pagePath  String              @unique
+  blocks    Json
+  updatedBy String?
+  versions  PageLayoutVersion[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model PageLayoutVersion {
+  id           String     @id @default(cuid())
+  pageLayoutId String
+  pageLayout   PageLayout @relation(fields: [pageLayoutId], references: [id], onDelete: Cascade)
+  label        String
+  status       String
+  snapshot     Json
+  createdAt    DateTime   @default(now())
+
+  @@index([pageLayoutId, createdAt])
+}
+
+model NewsletterSubscriber {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  isActive   Boolean  @default(true)
+  sourcePage String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive, createdAt])
+  @@index([sourcePage, createdAt])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   Json
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model System_Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model ShareEvent {
+  id          String       @id @default(cuid())
+  productId    String
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  network      ShareNetwork
+  adminUserId  String?
+  adminUser    User?        @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+  createdAt    DateTime     @default(now())
+
+  @@index([productId, createdAt])
+  @@index([network, createdAt])
+}
+
+model WebhookEventLog {
+  id               String                  @id @default(cuid())
+  provider         PaymentProvider         @default(BOLD)
+  eventId          String?
+  eventType        String
+  subject          String?
+  idempotencyKey   String                  @unique
+  orderId          String?
+  order            Order?                  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  signature        String?
+  processingStatus WebhookProcessingStatus @default(RECEIVED)
+  payload          Json
+  errorMessage     String?
+  receivedAt       DateTime                @default(now())
+  processedAt      DateTime?
+
+  @@index([provider, receivedAt])
+  @@index([eventType, receivedAt])
+  @@index([orderId, receivedAt])
+}
