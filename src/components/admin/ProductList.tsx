@@ -32,7 +32,7 @@ export default async function ProductList() {
         basePrice: product.basePrice,
         shippingMode: product.shippingMode,
         shippingCost: product.shippingCost,
-        images: product.images,
+        images: (product.images as string[]) ?? [],
         variantCount: product.variants.length,
         tagNames: product.tags.map((tag) => tag.name),
         createdAt: product.createdAt.toISOString(),
