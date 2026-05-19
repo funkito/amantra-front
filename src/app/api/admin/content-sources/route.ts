@@ -73,7 +73,7 @@ export async function GET() {
         id: product.id,
         title: product.name,
         body: product.description,
-        image: product.images[0] ?? '',
+        image: (product.images as string[])?.[0] ?? '',
         tags: product.tags.map((tag) => tag.name),
       })),
       posts: posts.map((post) => ({
