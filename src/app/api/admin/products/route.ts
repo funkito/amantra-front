@@ -1,6 +1,3 @@
-import { fetchBackendAdminApi, uploadProductImagesToBackend } from '@/lib/admin/backend-admin-api';
-import { getSessionFromCookies } from '@/lib/auth/session';
-import { buildProductPayload, validateProductPayload } from '@/lib/admin/products';
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // Asegúrate de que la ruta a tu cliente de prisma sea la correcta
 
@@ -24,9 +21,10 @@ export async function POST(request: Request) {
     const totalStock = payload.variants?.reduce((acc: number, v: any) => acc + (Number(v.stock) || 0), 0) || 0;
 
     // 2. Guardar el producto directo en Railway usando Prisma
+    // 2. Guardar el producto directo en Railway usando Prisma
     const product = await prisma.product.create({
       data: {
-        title: payload.name,
+        name: payload.name,          // ◄ Cambiado de 'title' a 'name'
         description: payload.description,
         price: payload.basePrice,
         stock: totalStock,
@@ -36,7 +34,7 @@ export async function POST(request: Request) {
         variants: {
           create: payload.variants?.map((v: any) => ({
             sku: v.sku,
-            size: v.talla,
+            size: v.talla,           // ◄ Verifica si en tu esquema es 'size' o 'talla'
             color: v.color,
             material: v.material,
             stock: Number(v.stock) || 0,
