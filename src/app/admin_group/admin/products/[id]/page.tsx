@@ -99,7 +99,7 @@ export default async function AdminEditProductPage(props: PageProps<'/admin_grou
           shippingCost: String(product.shippingCost),
           shippingNotes: product.shippingNotes ?? '',
           tags: product.tags.map((tag) => tag.name),
-          images: product.images,
+          images: (product.images as string[]) ?? [],
           variants: product.variants.map((variant) => ({
             sku: variant.sku,
             size: variant.size ?? '',
