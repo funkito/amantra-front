@@ -159,7 +159,7 @@ function mapLocalProduct(product: LocalProduct): PublicProduct {
     shippingCost,
     shippingNotes: product.shippingNotes,
     tags: tagNames,
-    images: product.images,
+    images: (product.images as string[]) ?? [],
     variants: product.variants.map((variant) => ({
       id: variant.id,
       sku: variant.sku,
