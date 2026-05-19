@@ -60,7 +60,7 @@ export async function GET() {
     });
 
     const catalogMedia = productImages.flatMap((product) =>
-      product.images.map((imageUrl, index) => ({
+  ((product.images as string[]) ?? []).map((imageUrl, index) => ({
         id: `product:${product.id}:${index}`,
         label: `${product.name} ${index + 1}`,
         url: imageUrl,
