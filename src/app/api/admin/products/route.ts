@@ -16,29 +16,23 @@ function mapStatus(status: 'PUBLISHED' | 'DRAFT' | 'UNPUBLISHED') {
 export async function POST(request: Request) {
   try {
     const payload = await request.json();
-    
-    // 1. Calcular el stock total sumando las variantes
-    const totalStock = payload.variants?.reduce((acc: number, v: any) => acc + (Number(v.stock) || 0), 0) || 0;
 
-    // 2. Guardar el producto directo en Railway usando Prisma
-    // 2. Guardar el producto directo en Railway usando Prisma
+    // 1. Guardar el producto directo en Railway usando Prisma con los nombres reales del esquema
     const product = await prisma.product.create({
       data: {
-        name: payload.name,          // ◄ Cambiado de 'title' a 'name'
+        name: payload.name,
         description: payload.description,
-        price: payload.basePrice,
-        stock: totalStock,
+        basePrice: Number(payload.basePrice) || 0, // Aseguramos que sea un número flotante
         status: payload.status || 'DRAFT',
-        images: payload.images || [], 
-        tags: payload.tags || [],
+        images: payload.images || [],
+        // Mapeamos las variantes usando el nombre exacto del modelo: ProductVariant
         variants: {
           create: payload.variants?.map((v: any) => ({
             sku: v.sku,
-            size: v.talla,           // ◄ Verifica si en tu esquema es 'size' o 'talla'
-            color: v.color,
-            material: v.material,
+            size: v.talla || null,  // Mapea 'talla' del formulario a 'size' del esquema
+            color: v.color || null,
             stock: Number(v.stock) || 0,
-            price: Number(v.price) || payload.basePrice,
+            price: Number(v.price) || Number(payload.basePrice) || 0,
           })) || []
         }
       },
