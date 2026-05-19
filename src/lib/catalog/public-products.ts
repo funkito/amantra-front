@@ -152,7 +152,7 @@ function mapLocalProduct(product: LocalProduct): PublicProduct {
       ...(tagNames.length > 0 ? [tagNames[0]] : []),
       totalStock > 0 ? `Stock ${totalStock}` : 'Sin stock',
     ].slice(0, 3),
-    imageUrl: product.images[0] ?? null,
+    imageUrl: (product.images as string[])?.[0] ?? null,
     productUrl: buildProductPublicUrl(product.id),
     shippingLabel: formatShipping(shippingCost),
     shippingMode: product.shippingMode,
