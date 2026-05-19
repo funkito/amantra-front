@@ -103,7 +103,7 @@ function PublicBlockRenderer({
     : null;
   const featuredProductTitle = featuredProduct?.name ?? block.content.title;
   const featuredProductBody = featuredProduct?.description ?? block.content.body;
-  const featuredProductImage = featuredProduct?.images[0] ?? block.content.image;
+  const featuredProductImage = (featuredProduct?.images as string[])?.[0] ?? block.content.image;
   const featuredProductHref = featuredProduct ? `/products/${featuredProduct.id}` : (block.content.ctaHref ?? '#');
   const linkedPostTitle = linkedPost?.title ?? block.content.title;
   const linkedPostBody = linkedPost ? getPostField(linkedPost.content, 'excerpt') || block.content.body : block.content.body;
