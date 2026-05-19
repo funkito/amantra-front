@@ -221,7 +221,7 @@ async function getLocalCatalogList({
       stock: product.variants.reduce((sum, variant) => sum + variant.stock, 0),
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
-      images: product.images.map((url, index) => ({
+      images: ((product.images as string[]) ?? []).map((url, index) => ({
         id: index + 1,
         url,
         isPrimary: index === 0,
