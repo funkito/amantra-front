@@ -83,7 +83,7 @@ model Product {
   shippingMode  ShippingMode     @default(FIXED)
   shippingCost  Float            @default(0)
   shippingNotes String?
-  images        String[]
+  images        Json?
   variants      ProductVariant[]
   orderItems    OrderItem[]
   tags          Tag[]            @relation("ProductTags")
