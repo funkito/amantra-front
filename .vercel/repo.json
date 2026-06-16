@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_gnz4zgh4m13wxu8qackqBvUw8noF",
+      "name": "amantra-front",
+      "directory": ".",
+      "orgId": "team_IOgaQTKAeRVssyYlxuqXga9p"
+    }
+  ]
+}
