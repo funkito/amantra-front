@@ -1,34 +1,47 @@
 import { NextResponse } from 'next/server';
-import { fetchBackendAdminApi, uploadProductImagesToBackend } from '@/lib/admin/backend-admin-api';
+import type { ProductStatus, ShippingMode } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { v2 as cloudinary } from 'cloudinary';
 import { getSessionFromCookies } from '@/lib/auth/session';
 import { buildProductPayload, validateProductPayload } from '@/lib/admin/products';
 
-function mapStatus(status: 'PUBLISHED' | 'DRAFT' | 'UNPUBLISHED') {
-  if (status === 'PUBLISHED') {
-    return 'published';
-  }
+export const runtime = 'nodejs';
 
-  if (status === 'UNPUBLISHED') {
-    return 'unpublished';
-  }
+// Configuración de Cloudinary con tus variables de entorno desglosadas
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-  return 'draft';
+// Función auxiliar para subir las imágenes a Cloudinary de forma nativa
+async function uploadToCloudinary(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { folder: 'products' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result?.secure_url || '');
+      }
+    ).end(buffer);
+  });
 }
 
+// Validador de sesión original del administrador
 async function authorizeProductManager() {
   const session = await getSessionFromCookies();
-
   if (!session || !['SUPERADMIN', 'EDITOR'].includes(session.role)) {
     return null;
   }
-
   return session;
 }
 
-export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/products/[id]'>) {
+// 1. ENDPOINT PARA ACTUALIZAR / EDITAR / DESPUBLICAR (PATCH)
+export async function PATCH(request: Request, ctx: any) {
   try {
     const session = await authorizeProductManager();
-
     if (!session) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
@@ -36,32 +49,21 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/prod
     const { id } = await ctx.params;
     const contentType = request.headers.get('content-type') ?? '';
 
+    // CASO A: Acción rápida por JSON (Ej: Despublicar desde la tabla)
     if (contentType.includes('application/json')) {
       const body = (await request.json()) as { action?: 'unpublish' };
 
       if (body.action === 'unpublish') {
-        const response = await fetchBackendAdminApi(`/products/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'unpublished' }),
+        const updatedProduct = await prisma.product.update({
+          where: { id },
+          data: { status: 'UNPUBLISHED' },
         });
-        const result = (await response.json()) as { data?: unknown; error?: { message?: string } };
-
-        if (!response.ok) {
-          return NextResponse.json(
-            { error: result.error?.message ?? 'No fue posible despublicar el producto.' },
-            { status: response.status }
-          );
-        }
-
-        return NextResponse.json({ success: true, product: result.data });
+        return NextResponse.json({ success: true, product: updatedProduct });
       }
-
       return NextResponse.json({ error: 'Acción inválida.' }, { status: 400 });
     }
 
+    // CASO B: Formulario completo de Edición (FormData con imágenes y variantes)
     const formData = await request.formData();
     const payload = buildProductPayload(formData);
     const validationError = validateProductPayload(payload);
@@ -70,43 +72,60 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/prod
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const newImages = await uploadProductImagesToBackend(payload.imageFiles);
-    const images = [...payload.retainedImages, ...newImages];
+    // Subir nuevas imágenes si se adjuntaron en el formulario
+    const uploadedImages = await Promise.all(
+      payload.imageFiles.map((file) => uploadToCloudinary(file))
+    );
+    const images = [...payload.retainedImages, ...uploadedImages];
 
     if (images.length === 0) {
       return NextResponse.json({ error: 'Debes mantener o subir al menos una imagen.' }, { status: 400 });
     }
 
-    const totalStock = payload.variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock) || 0), 0);
-    const response = await fetchBackendAdminApi(`/products/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: payload.name,
-        description: payload.description,
-        price: payload.basePrice,
-        stock: totalStock,
-        status: mapStatus(payload.status as 'PUBLISHED' | 'DRAFT' | 'UNPUBLISHED'),
-        images: images.map((url, index) => ({
-          url,
-          isPrimary: index === 0,
-          orderIndex: index,
-        })),
-        tags: payload.tags,
-      }),
+    // 🔥 PASO CLAVE: Borramos las variantes viejas primero para evitar colisiones de SKU único
+    await prisma.productVariant.deleteMany({
+      where: { productId: id }
     });
-    const result = (await response.json()) as { data?: unknown; error?: { message?: string } };
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: result.error?.message ?? 'No fue posible actualizar el producto en MariaDB.' },
-        { status: response.status }
-      );
-    }
+    // Actualizamos el producto de forma directa y limpia en Prisma
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        name: payload.name,
+        description: payload.description,
+        basePrice: payload.basePrice,
+        status: payload.status as ProductStatus,
+        shippingMode: payload.shippingMode as ShippingMode,
+        shippingCost: payload.shippingCost,
+        shippingNotes: payload.shippingNotes,
+        images,
+        variants: {
+          create: payload.variants.map((variant) => ({
+            sku: variant.sku,
+            size: variant.size,
+            color: variant.color,
+            stoneType: variant.stoneType,
+            stock: Number(variant.stock) || 0,
+            price: Number(variant.price) || payload.basePrice,
+          })),
+        },
+        ...(payload.tags && {
+          tags: {
+            set: [],
+            connectOrCreate: payload.tags.map((tag) => ({
+              where: { name: tag },
+              create: { name: tag },
+            })),
+          },
+        }),
+      },
+      include: {
+        variants: true,
+        tags: true,
+      },
+    });
 
-    return NextResponse.json({ success: true, product: result.data });
+    return NextResponse.json({ success: true, product: updatedProduct }, { status: 200 });
   } catch (error) {
     console.error('Admin product update error:', error);
     const message = error instanceof Error ? error.message : 'No fue posible actualizar el producto.';
@@ -114,26 +133,20 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/prod
   }
 }
 
-export async function DELETE(_request: Request, ctx: RouteContext<'/api/admin/products/[id]'>) {
+// 2. ENDPOINT PARA ELIMINAR UN PRODUCTO (DELETE)
+export async function DELETE(_request: Request, ctx: any) {
   try {
     const session = await authorizeProductManager();
-
     if (!session) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
     }
 
     const { id } = await ctx.params;
-    const response = await fetchBackendAdminApi(`/products/${id}`, {
-      method: 'DELETE',
-    });
-    const result = (await response.json()) as { error?: { message?: string } };
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: result.error?.message ?? 'No fue posible eliminar el producto.' },
-        { status: response.status }
-      );
-    }
+    // Eliminamos el producto de la base de datos (Prisma limpia las relaciones en cascada si están configuradas)
+    await prisma.product.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
