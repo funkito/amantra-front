@@ -5,6 +5,7 @@ import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import { fetchBuilderVersion } from '@/lib/builder/api';
 import { builderStylePresets } from '@/lib/builder/style-presets';
 import { usePageBuilderStore } from '@/lib/store/usePageBuilderStore';
+import WellnessBannerEditor from '@/components/admin/builder/sidebar/WellnessBannerEditor';
 
 const viewportButtons = [
   { key: 'desktop', label: 'Desktop', icon: Monitor },
@@ -355,6 +356,10 @@ export default function BuilderInspector() {
                 Duplicar bloque
               </button>
             </div>
+
+            {selectedBlock.type === 'wellness_banner' ? (
+              <WellnessBannerEditor block={selectedBlock} />
+            ) : null}
 
             <label style={{ display: 'grid', gap: 6 }}>
               <span style={{ color: '#D4AF37', fontSize: 13 }}>Título visible</span>

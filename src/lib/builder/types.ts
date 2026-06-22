@@ -22,6 +22,7 @@ export type BuilderBlockType =
   | 'blog_teaser'
   | 'rich_text'
   | 'image_banner'
+  | 'wellness_banner'
   | 'newsletter_cta';
 
 export type BuilderStylePreset = 'default' | 'warm' | 'editorial' | 'contrast';
@@ -54,6 +55,19 @@ export interface BuilderBlockContent {
   image?: string;
   ctaLabel?: string;
   ctaHref?: string;
+  eyebrow?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+  bannerBackgroundColor?: string;
+  bannerTextColor?: string;
+  bannerAccentColor?: string;
+  bannerMutedColor?: string;
+  benefitOneTitle?: string;
+  benefitOneBody?: string;
+  benefitTwoTitle?: string;
+  benefitTwoBody?: string;
+  benefitThreeTitle?: string;
+  benefitThreeBody?: string;
   productId?: string;
   productTag?: string;
   postSlug?: string;

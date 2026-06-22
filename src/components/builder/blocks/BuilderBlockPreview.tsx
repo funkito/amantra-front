@@ -13,6 +13,7 @@ const FeaturedProductPreview = dynamic(() => import('@/components/builder/blocks
 const BlogTeaserPreview = dynamic(() => import('@/components/builder/blocks/previews/BlogTeaserPreview'));
 const RichTextPreview = dynamic(() => import('@/components/builder/blocks/previews/RichTextPreview'));
 const ImageBannerPreview = dynamic(() => import('@/components/builder/blocks/previews/ImageBannerPreview'));
+const WellnessBannerPreview = dynamic(() => import('@/components/builder/blocks/previews/WellnessBannerPreview'));
 const NewsletterCtaPreview = dynamic(() => import('@/components/builder/blocks/previews/NewsletterCtaPreview'));
 
 interface BuilderBlockPreviewProps {
@@ -42,6 +43,8 @@ export default function BuilderBlockPreview({ block, selected = false }: Builder
       return <RichTextPreview block={block} selected={selected} />;
     case 'image_banner':
       return <ImageBannerPreview block={block} selected={selected} />;
+    case 'wellness_banner':
+      return <WellnessBannerPreview block={block} selected={selected} />;
     case 'newsletter_cta':
       return <NewsletterCtaPreview block={block} selected={selected} />;
     default:

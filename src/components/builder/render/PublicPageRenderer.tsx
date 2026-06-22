@@ -7,6 +7,7 @@ import NewsletterSignupForm from '@/components/storefront/NewsletterSignupForm';
 import SiteMenu from '@/components/storefront/SiteMenu';
 import BuilderProductGridSection from '@/components/builder/render/BuilderProductGridSection';
 import BuilderBlogGridSection from '@/components/builder/render/BuilderBlogGridSection';
+import WellnessBannerBlock from '@/components/blocks/WellnessBannerBlock';
 
 function getPostField(content: unknown, field: 'excerpt' | 'coverImage' | 'body') {
   if (!content || typeof content !== 'object') {
@@ -397,6 +398,14 @@ function PublicBlockRenderer({
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+      );
+    case 'wellness_banner':
+      return (
+        <section style={outerStyle}>
+          <div style={innerStyle}>
+            <WellnessBannerBlock content={block.content} />
           </div>
         </section>
       );

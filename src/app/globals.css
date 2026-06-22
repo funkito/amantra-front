@@ -656,6 +656,208 @@ button {
   transform: translateY(-1px);
 }
 
+.wellness-banner-block {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
+  min-height: 410px;
+  overflow: hidden;
+  border-radius: 34px;
+  border: 1px solid rgba(171, 132, 72, 0.18);
+  background:
+    radial-gradient(circle at 6% 8%, rgba(255, 255, 255, 0.64), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--wellness-banner-bg) 92%, #ffffff 8%), var(--wellness-banner-bg));
+  color: var(--wellness-banner-text);
+  box-shadow: 0 28px 90px rgba(98, 74, 48, 0.14);
+  isolation: isolate;
+}
+
+.wellness-banner-block::after {
+  content: "";
+  position: absolute;
+  inset: auto -8% -36% 35%;
+  z-index: -1;
+  height: 70%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(196, 145, 45, 0.18), transparent 68%);
+}
+
+.wellness-banner-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  padding: clamp(2rem, 4vw, 4.2rem);
+}
+
+.wellness-banner-eyebrow {
+  margin: 0;
+  color: color-mix(in srgb, var(--wellness-banner-text) 68%, #276a4b 32%);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.wellness-banner-copy h2 {
+  max-width: 11ch;
+  margin: 0;
+  color: var(--wellness-banner-text);
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2.7rem, 5.8vw, 5rem);
+  line-height: 0.93;
+  letter-spacing: -0.045em;
+}
+
+.wellness-banner-body {
+  max-width: 520px;
+  margin: 0;
+  color: var(--wellness-banner-muted);
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.wellness-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.4rem;
+}
+
+.wellness-banner-primary,
+.wellness-banner-secondary {
+  display: inline-flex;
+  min-height: 3.05rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 0 1.55rem;
+  font-weight: 800;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.wellness-banner-primary {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--wellness-banner-accent) 92%, #ffffff 8%), var(--wellness-banner-accent));
+  color: #fffaf0;
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--wellness-banner-accent) 24%, transparent);
+}
+
+.wellness-banner-secondary {
+  border: 1px solid color-mix(in srgb, var(--wellness-banner-accent) 34%, transparent);
+  background: rgba(255, 255, 255, 0.44);
+  color: var(--wellness-banner-text);
+}
+
+.wellness-banner-primary:hover,
+.wellness-banner-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.wellness-banner-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.35rem;
+}
+
+.wellness-banner-benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.wellness-banner-benefit-icon {
+  display: inline-grid;
+  width: 2.8rem;
+  height: 2.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--wellness-banner-accent) 42%, transparent);
+  color: color-mix(in srgb, var(--wellness-banner-text) 70%, #397052 30%);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.wellness-banner-benefit strong,
+.wellness-banner-benefit small {
+  display: block;
+}
+
+.wellness-banner-benefit strong {
+  color: var(--wellness-banner-text);
+  font-size: 0.82rem;
+}
+
+.wellness-banner-benefit small {
+  margin-top: 0.12rem;
+  color: var(--wellness-banner-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.wellness-banner-visual {
+  position: relative;
+  min-height: 410px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 72% 22%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(196, 145, 45, 0.12));
+}
+
+.wellness-banner-visual::before {
+  content: "";
+  position: absolute;
+  inset: 10% 8% 10% auto;
+  width: min(340px, 44%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.36);
+  filter: blur(3px);
+}
+
+.wellness-banner-visual img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 410px;
+  object-fit: cover;
+}
+
+.wellness-banner-placeholder {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 410px;
+  place-items: center;
+  align-content: center;
+  gap: 0.8rem;
+  color: var(--wellness-banner-muted);
+  text-align: center;
+  padding: 2rem;
+}
+
+@media (max-width: 980px) {
+  .wellness-banner-block {
+    grid-template-columns: 1fr;
+  }
+
+  .wellness-banner-copy h2 {
+    max-width: 12ch;
+  }
+
+  .wellness-banner-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .wellness-banner-visual,
+  .wellness-banner-visual img,
+  .wellness-banner-placeholder {
+    min-height: 320px;
+  }
+}
+
 .product-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
