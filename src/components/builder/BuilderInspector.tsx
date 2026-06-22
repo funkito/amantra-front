@@ -6,6 +6,7 @@ import { fetchBuilderVersion } from '@/lib/builder/api';
 import { builderStylePresets } from '@/lib/builder/style-presets';
 import { usePageBuilderStore } from '@/lib/store/usePageBuilderStore';
 import WellnessBannerEditor from '@/components/admin/builder/sidebar/WellnessBannerEditor';
+import SiteMenuEditor from '@/components/admin/builder/sidebar/SiteMenuEditor';
 
 const viewportButtons = [
   { key: 'desktop', label: 'Desktop', icon: Monitor },
@@ -359,6 +360,10 @@ export default function BuilderInspector() {
 
             {selectedBlock.type === 'wellness_banner' ? (
               <WellnessBannerEditor block={selectedBlock} />
+            ) : null}
+
+            {selectedBlock.type === 'site_menu' ? (
+              <SiteMenuEditor block={selectedBlock} />
             ) : null}
 
             <label style={{ display: 'grid', gap: 6 }}>

@@ -589,13 +589,13 @@ button {
   width: 100%;
   border-radius: 22px;
   border: 1px solid var(--line);
-  background: rgba(22, 16, 12, 0.88);
+  background: transparent;
   box-shadow: var(--shadow);
   backdrop-filter: blur(20px);
 }
 
 .site-menu-shell.compact {
-  background: rgba(22, 16, 12, 0.74);
+  background: transparent;
 }
 
 .site-menu-inner {
@@ -608,11 +608,20 @@ button {
 }
 
 .site-menu-brand {
-  color: #fff8ea;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
   font-family: var(--font-display), serif;
   font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.site-menu-logo {
+  display: block;
+  width: auto;
+  height: 3rem;
+  object-fit: contain;
 }
 
 .site-menu-nav {
@@ -635,7 +644,7 @@ button {
 }
 
 .site-menu-link {
-  color: var(--muted);
+  color: inherit;
   background: rgba(255, 248, 232, 0.04);
 }
 
@@ -654,6 +663,53 @@ button {
 
 .site-menu-cta:hover {
   transform: translateY(-1px);
+}
+
+.site-menu-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.site-menu-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.65rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.site-menu-search input {
+  width: 8.8rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+}
+
+.site-menu-search input::placeholder {
+  color: currentColor;
+  opacity: 0.6;
+}
+
+.site-menu-socials {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.site-menu-social-link {
+  display: inline-grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 248, 232, 0.04);
 }
 
 .wellness-banner-block {

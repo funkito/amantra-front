@@ -134,12 +134,13 @@ function PublicBlockRenderer({
   switch (block.type) {
     case 'site_menu':
       return (
-        <section style={outerStyle}>
+        <section style={{ ...outerStyle, background: 'transparent' }}>
           <div style={innerStyle}>
             <SiteMenu
               brandLabel={block.content.title || 'Amantra'}
               ctaLabel={block.content.ctaLabel || 'Explorar colección'}
               ctaHref={block.content.ctaHref || '/#catalogo'}
+              content={block.content}
               compact
             />
           </div>
