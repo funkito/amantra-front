@@ -229,6 +229,59 @@ button {
   background: rgba(242, 200, 107, 0.08);
 }
 
+.builder-product-category-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.95rem;
+  width: 100%;
+}
+
+.builder-product-category-tile {
+  position: relative;
+  isolation: isolate;
+  min-height: 112px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 145, 45, 0.22);
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(98, 74, 48, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.builder-product-category-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px rgba(98, 74, 48, 0.14);
+}
+
+.builder-product-category-image {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transition: transform 220ms ease;
+}
+
+.builder-product-category-tile:hover .builder-product-category-image {
+  transform: scale(1.04);
+}
+
+.builder-product-category-label {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  max-width: calc(100% - 2rem);
+  color: inherit;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: left;
+  text-wrap: balance;
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.55);
+}
+
 .catalog-filter-state {
   display: flex;
   flex-wrap: wrap;

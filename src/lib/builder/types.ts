@@ -83,6 +83,15 @@ export interface BuilderBlockContent {
   benefitThreeBody?: string;
   productId?: string;
   productTag?: string;
+  productTagStyle?: 'chips' | 'tiles';
+  productTagAllLabel?: string;
+  productTagShowImages?: boolean;
+  productTagTileBackgroundColor?: string;
+  productTagTileTextColor?: string;
+  productTagTileActiveBackgroundColor?: string;
+  productTagTileActiveTextColor?: string;
+  productTagTileBorderColor?: string;
+  productTagTileOverlayColor?: string;
   postSlug?: string;
   blogTag?: string;
   leftTitle?: string;

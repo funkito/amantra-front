@@ -237,6 +237,15 @@ function PublicBlockRenderer({
               accentColor={accentColor}
               limit={block.props.limit ?? 6}
               columns={block.props.columns ?? 3}
+              tagStyle={block.content.productTagStyle ?? 'tiles'}
+              tagAllLabel={block.content.productTagAllLabel ?? 'Todas'}
+              tagShowImages={block.content.productTagShowImages ?? true}
+              tagTileBackgroundColor={block.content.productTagTileBackgroundColor}
+              tagTileTextColor={block.content.productTagTileTextColor}
+              tagTileActiveBackgroundColor={block.content.productTagTileActiveBackgroundColor}
+              tagTileActiveTextColor={block.content.productTagTileActiveTextColor}
+              tagTileBorderColor={block.content.productTagTileBorderColor}
+              tagTileOverlayColor={block.content.productTagTileOverlayColor}
             />
           </div>
         </section>

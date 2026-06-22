@@ -7,6 +7,7 @@ import { builderStylePresets } from '@/lib/builder/style-presets';
 import { usePageBuilderStore } from '@/lib/store/usePageBuilderStore';
 import WellnessBannerEditor from '@/components/admin/builder/sidebar/WellnessBannerEditor';
 import SiteMenuEditor from '@/components/admin/builder/sidebar/SiteMenuEditor';
+import ProductGridTagsEditor from '@/components/admin/builder/sidebar/ProductGridTagsEditor';
 
 const viewportButtons = [
   { key: 'desktop', label: 'Desktop', icon: Monitor },
@@ -364,6 +365,10 @@ export default function BuilderInspector() {
 
             {selectedBlock.type === 'site_menu' ? (
               <SiteMenuEditor block={selectedBlock} />
+            ) : null}
+
+            {selectedBlock.type === 'product_grid' ? (
+              <ProductGridTagsEditor block={selectedBlock} />
             ) : null}
 
             <label style={{ display: 'grid', gap: 6 }}>

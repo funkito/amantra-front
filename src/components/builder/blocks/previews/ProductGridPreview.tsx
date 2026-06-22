@@ -37,35 +37,36 @@ export default function ProductGridPreview({ block, selected = false }: ProductG
         />
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        <span
-          style={{
-            padding: '8px 12px',
-            borderRadius: 999,
-            border: '1px solid rgba(212,175,55,0.18)',
-            background: block.content.productTag ? 'rgba(255,255,255,0.03)' : 'rgba(212,175,55,0.14)',
-            color: block.content.productTag ? '#FFFFF0' : '#D4AF37',
-            fontSize: 12,
-            fontWeight: 700,
-          }}
-        >
-          Todas
-        </span>
-        {block.content.productTag ? (
+      <div className="builder-product-category-rail">
+        {['Todas', 'Aceites esenciales', 'Cuencos', 'Anillos energéticos'].map((tag, index) => (
           <span
+            key={tag}
+            className="builder-product-category-tile"
             style={{
-              padding: '8px 12px',
-              borderRadius: 999,
-              border: '1px solid rgba(212,175,55,0.24)',
-              background: 'rgba(212,175,55,0.14)',
-              color: '#D4AF37',
-              fontSize: 12,
-              fontWeight: 700,
+              minHeight: 86,
+              backgroundColor:
+                index === 0
+                  ? block.content.productTagTileActiveBackgroundColor || '#f2dfb3'
+                  : block.content.productTagTileBackgroundColor || '#fbf4e8',
+              borderColor: block.content.productTagTileBorderColor || 'rgba(196,145,45,0.22)',
+              color:
+                index === 0
+                  ? block.content.productTagTileActiveTextColor || '#140e0a'
+                  : block.content.productTagTileTextColor || '#31513d',
             }}
           >
-            #{block.content.productTag}
+            <span
+              className="builder-product-category-image"
+              style={{
+                background:
+                  index === 0
+                    ? 'linear-gradient(rgba(255,248,235,0.62), rgba(255,248,235,0.62)), radial-gradient(circle at 70% 40%, rgba(212,175,55,0.45), transparent 34%)'
+                    : 'linear-gradient(rgba(255,248,235,0.62), rgba(255,248,235,0.62)), radial-gradient(circle at 70% 40%, rgba(49,81,61,0.18), transparent 34%)',
+              }}
+            />
+            <span className="builder-product-category-label">{index === 0 ? block.content.productTagAllLabel || tag : tag}</span>
           </span>
-        ) : null}
+        ))}
       </div>
 
       <div

@@ -21,6 +21,15 @@ interface BuilderProductGridSectionProps {
   accentColor: string;
   limit: number;
   columns: 1 | 2 | 3 | 4;
+  tagStyle?: 'chips' | 'tiles';
+  tagAllLabel?: string;
+  tagShowImages?: boolean;
+  tagTileBackgroundColor?: string;
+  tagTileTextColor?: string;
+  tagTileActiveBackgroundColor?: string;
+  tagTileActiveTextColor?: string;
+  tagTileBorderColor?: string;
+  tagTileOverlayColor?: string;
 }
 
 const currency = new Intl.NumberFormat('es-CO', {
@@ -61,6 +70,15 @@ export default function BuilderProductGridSection({
   accentColor,
   limit,
   columns,
+  tagStyle = 'tiles',
+  tagAllLabel = 'Todas',
+  tagShowImages = true,
+  tagTileBackgroundColor = '#fbf4e8',
+  tagTileTextColor = '#31513d',
+  tagTileActiveBackgroundColor,
+  tagTileActiveTextColor = '#140e0a',
+  tagTileBorderColor = 'rgba(196,145,45,0.22)',
+  tagTileOverlayColor = 'rgba(255,248,235,0.48)',
 }: BuilderProductGridSectionProps) {
   const getTagNames = (product: BuilderGridProduct) =>
     product.tags.map((tag) => (typeof tag === 'string' ? tag : tag.name)).filter(Boolean);
@@ -74,6 +92,21 @@ export default function BuilderProductGridSection({
       ).sort((left, right) => left.localeCompare(right, 'es')),
     [products]
   );
+  const tagTileData = useMemo(
+    () =>
+      availableTags.map((tag) => {
+        const product = products.find((item) =>
+          getTagNames(item).some((productTag) => productTag.toLowerCase() === tag.toLowerCase())
+        );
+
+        return {
+          tag,
+          image: product?.images?.[0] ?? '',
+        };
+      }),
+    [availableTags, products]
+  );
+  const allTagImage = products.find((product) => product.images[0])?.images[0] ?? '';
 
   const normalizedInitialTag = initialTag?.trim() || '';
   const [activeTag, setActiveTag] = useState(
@@ -98,7 +131,56 @@ export default function BuilderProductGridSection({
           <p style={{ margin: 0, color: 'rgba(245,239,228,0.78)', lineHeight: 1.8 }}>{body}</p>
         </div>
 
-        {availableTags.length > 0 ? (
+        {availableTags.length > 0 && tagStyle === 'tiles' ? (
+          <div className="builder-product-category-rail" aria-label="Filtrar productos por categoría">
+            <button
+              type="button"
+              onClick={() => setActiveTag('')}
+              className="builder-product-category-tile"
+              style={{
+                backgroundColor: activeTag ? tagTileBackgroundColor : tagTileActiveBackgroundColor || accentColor,
+                borderColor: tagTileBorderColor,
+                color: activeTag ? tagTileTextColor : tagTileActiveTextColor,
+              }}
+            >
+              {tagShowImages && allTagImage ? (
+                <span
+                  className="builder-product-category-image"
+                  style={{ backgroundImage: `linear-gradient(${tagTileOverlayColor}, ${tagTileOverlayColor}), url(${allTagImage})` }}
+                />
+              ) : null}
+              <span className="builder-product-category-label">{tagAllLabel}</span>
+            </button>
+
+            {tagTileData.map((item) => {
+              const selected = activeTag.toLowerCase() === item.tag.toLowerCase();
+
+              return (
+                <button
+                  key={item.tag}
+                  type="button"
+                  onClick={() => setActiveTag(item.tag)}
+                  className="builder-product-category-tile"
+                  style={{
+                    backgroundColor: selected ? tagTileActiveBackgroundColor || accentColor : tagTileBackgroundColor,
+                    borderColor: tagTileBorderColor,
+                    color: selected ? tagTileActiveTextColor : tagTileTextColor,
+                  }}
+                >
+                  {tagShowImages && item.image ? (
+                    <span
+                      className="builder-product-category-image"
+                      style={{ backgroundImage: `linear-gradient(${tagTileOverlayColor}, ${tagTileOverlayColor}), url(${item.image})` }}
+                    />
+                  ) : null}
+                  <span className="builder-product-category-label">{item.tag}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {availableTags.length > 0 && tagStyle === 'chips' ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             <button
               type="button"
@@ -113,7 +195,7 @@ export default function BuilderProductGridSection({
                 fontWeight: 700,
               }}
             >
-              Todas
+              {tagAllLabel}
             </button>
 
             {availableTags.map((tag) => {
