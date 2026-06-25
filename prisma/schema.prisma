@@ -61,8 +61,6 @@ enum ShareNetwork {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  email       String       @unique
   password    String
   name        String?
   role        Role         @default(CLIENTE)
@@ -70,21 +68,17 @@ model User {
   orders      Order[]
   posts       Post[]
   shareEvents ShareEvent[]
-  createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
 
 model Category {
-  id          String    @id @default(cuid())
   name        String    @unique
   description String?   @db.LongText
   products    Product[]
-  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
 model Product {
-  id           String        @id @default(cuid())
   name         String
   description  String        @db.LongText 
   price        Decimal       @db.Decimal(10, 2)
@@ -98,27 +92,23 @@ model Product {
   orderItems   OrderItem[]
   tags         Tag[]         @relation("ProductTags")
   shareEvents  ShareEvent[]
-  createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   @@index([categoryId])
 }
 
 model ProductImage {
-  id        String   @id @default(cuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
   alt       String?
   isMain    Boolean  @default(false)
   position  Int      @default(0)
-  createdAt DateTime @default(now())
 
   @@index([productId])
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   sku       String   @unique
@@ -132,15 +122,12 @@ model ProductVariant {
 }
 
 model Tag {
-  id        String    @id @default(cuid())
   name      String    @unique
   imageUrl  String?
-  createdAt DateTime  @default(now())
   products  Product[] @relation("ProductTags")
 }
 
 model Order {
-  id              String            @id @default(cuid())
   userId          String
   user            User              @relation(fields: [userId], references: [id])
   status          PaymentStatus     @default(PENDING)
@@ -154,14 +141,12 @@ model Order {
   transactionId   String?           @unique
   items           OrderItem[]
   webhookLogs     WebhookEventLog[]
-  createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
   @@index([userId])
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
   orderId   String
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
@@ -174,30 +159,25 @@ model OrderItem {
 }
 
 model PageLayout {
-  id        String   @id @default(cuid())
   slug      String   @unique
   title     String
   blocks    Json
-  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Post {
-  id        String   @id @default(cuid())
   title     String
   slug      String   @unique
   content   String   @db.LongText
   image     String?
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([authorId])
 }
 
 model System_Setting {
-  id          String   @id @default(cuid())
   key         String   @unique
   value       String  @db.LongText
   description String? @db.LongText
@@ -205,20 +185,17 @@ model System_Setting {
 }
 
 model ShareEvent {
-  id          String       @id @default(cuid())
   productId   String
   product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   network     ShareNetwork
   adminUserId String?
   adminUser   User?        @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
-  createdAt   DateTime     @default(now())
 
   @@index([productId, createdAt])
   @@index([network, createdAt])
 }
 
 model WebhookEventLog {
-  id               String                  @id @default(cuid())
   provider         PaymentProvider         @default(BOLD)
   eventId          String?
   eventType        String
@@ -240,8 +217,13 @@ model WebhookEventLog {
 
 
 
+}
+
 model NewsletterSubscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  sourcePage String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
 }
