@@ -59,7 +59,7 @@ export async function PUT(
 
     const updated = await prisma.tag.update({
       where: { id: targetId },
-      data: { name, imageUrl }
+      data: { name }
     });
 
     return NextResponse.json({ success: true, data: updated });
