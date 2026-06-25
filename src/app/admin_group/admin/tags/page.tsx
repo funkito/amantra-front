@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminTagsPage() {
   const session = await requireProductManager();
 
-  // ⚡ Consulta directa a Prisma saltándonos la API caída
+  // ⚡ Consulta directa a Prisma incluyendo la nueva columna imageUrl
   const dbTags = await prisma.tag.findMany({
     include: {
       _count: {
@@ -21,10 +21,12 @@ export default async function AdminTagsPage() {
     }
   });
 
-  // Mapeo idéntico con ID indexado numérico para que el panel no chiste
+  // Mapeo idéntico incluyendo imageUrl para que el panel lo pueda renderizar
   const tags: AdminTagRow[] = dbTags.map((tag, index) => ({
     id: index + 1,
+    dbId: tag.id, // Guardamos el ID real de la BD por si el componente lo necesita
     name: tag.name,
+    imageUrl: tag.imageUrl || '', // 👈 ¡CLAVE! Pasamos la URL de la foto de la burbuja
     slug: tag.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-'),
     productCount: tag._count?.products ?? 0,
     blogCount: 0,
@@ -33,7 +35,7 @@ export default async function AdminTagsPage() {
   return (
     <AdminShell
       title="Etiquetas"
-      description="Organiza el vocabulario que conecta productos, blog, filtros y recomendaciones."
+      description="Organiza el vocabulario que conecta productos, blog, filtros y recommendations."
       email={session.email}
       role={session.role}
     >
