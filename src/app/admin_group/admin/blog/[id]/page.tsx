@@ -80,7 +80,7 @@ export default async function AdminEditBlogPostPage(props: PageProps<'/admin_gro
           body: typeof contentObject.body === 'string' ? contentObject.body : '',
           coverImage: typeof contentObject.coverImage === 'string' ? contentObject.coverImage : '',
           tags: getPostTags(post.content),
-          published: post.published,
+          published: true,
         }}
       />
     </AdminShell>
