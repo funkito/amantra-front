@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminTagsPage() {
   const session = await requireProductManager();
 
-  // Consulta directa a Prisma sin depender de APIs viejas externas
+  // ⚡ Consulta directa a Prisma saltándonos la API caída
   const dbTags = await prisma.tag.findMany({
     include: {
       _count: {
@@ -21,7 +21,7 @@ export default async function AdminTagsPage() {
     }
   });
 
-  // Mapeo adaptado al frontend original usando index numérico
+  // Mapeo idéntico con ID indexado numérico para que el panel no chiste
   const tags: AdminTagRow[] = dbTags.map((tag, index) => ({
     id: index + 1,
     name: tag.name,
