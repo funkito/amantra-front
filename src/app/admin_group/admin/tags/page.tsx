@@ -1,30 +1,33 @@
 import AdminBreadcrumbs from '@/components/admin/AdminBreadcrumbs';
 import AdminShell from '@/components/admin/AdminShell';
 import TagManagementPanel, { type AdminTagRow } from '@/components/admin/TagManagementPanel';
-import { fetchBackendAdminApi } from '@/lib/admin/backend-admin-api';
+import { prisma } from '@/lib/prisma';
 import { requireProductManager } from '@/lib/auth/guards';
 
-type BackendTag = {
-  id: number;
-  name: string;
-  slug: string;
-  _count?: {
-    productTags?: number;
-    blogTags?: number;
-  };
-};
+export const dynamic = 'force-dynamic';
 
 export default async function AdminTagsPage() {
   const session = await requireProductManager();
-  const response = await fetchBackendAdminApi('/tags?limit=200');
-  const payload = (await response.json()) as { data?: BackendTag[] };
 
-  const tags: AdminTagRow[] = (payload.data ?? []).map((tag) => ({
-    id: tag.id,
+  // Consulta directa a Prisma sin depender de APIs viejas externas
+  const dbTags = await prisma.tag.findMany({
+    include: {
+      _count: {
+        select: { products: true }
+      }
+    },
+    orderBy: {
+      name: 'asc'
+    }
+  });
+
+  // Mapeo adaptado al frontend original usando index numérico
+  const tags: AdminTagRow[] = dbTags.map((tag, index) => ({
+    id: index + 1,
     name: tag.name,
-    slug: tag.slug,
-    productCount: tag._count?.productTags ?? 0,
-    blogCount: tag._count?.blogTags ?? 0,
+    slug: tag.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-'),
+    productCount: tag._count?.products ?? 0,
+    blogCount: 0,
   }));
 
   return (
