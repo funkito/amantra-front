@@ -26,23 +26,21 @@ export default async function Page({ params }: PageProps) {
 
   // Parseamos usando el tipo correcto que el builder conoce
   // Nos aseguramos de que blocks sea un array válido para evitar que falle el .map en el componente
-const blocks = Array.isArray(page.blocks) 
+// Aseguramos que los bloques sean un array real
+const safeBlocks = Array.isArray(page.blocks) 
   ? page.blocks 
   : typeof page.blocks === 'string' 
     ? JSON.parse(page.blocks) 
     : [];
 
-  // Estructura básica requerida para el renderizado visual
-  const pageDocument = {
-    id: page.id,
-    slug: page.pagePath,
-    title: page.pagePath,
-    blocks: blocks,
-    status: 'published', 
-    theme: 'default',
-    versions: [],
-    layout: 'blank',
-  };
+ const pageDocument = {
+  id: page.id,
+  slug: page.pagePath,
+  title: page.pagePath,
+  blocks: safeBlocks,
+  layout: safeBlocks, // 👈 ¡La clave! Duplicamos como 'layout' por si el componente lo busca con este nombre
+  status: 'published', 
+};
 
   return (
     <div className="min-h-screen bg-transparent">
