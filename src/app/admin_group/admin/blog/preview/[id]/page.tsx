@@ -57,7 +57,7 @@ export default async function AdminBlogPreviewPage(props: PageProps<'/admin_grou
         <div style={{ display: 'grid', gap: 4 }}>
           <strong style={{ color: '#fff8ea' }}>Vista previa del artículo</strong>
           <span style={{ color: '#ccbda5', fontSize: 14 }}>
-            {post.title} · {post.published ? 'Publicado' : 'Borrador'}
+           {post.title} · {'Publicado'} 
           </span>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>

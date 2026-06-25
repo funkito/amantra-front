@@ -173,7 +173,7 @@ export default function BlogPostManagementTable({ posts }: BlogPostManagementTab
 
                     <TableCell>
                       <Chip
-                        label={post.published ? 'Publicado' : 'Borrador'}
+                        label="Publicado"
                         size="small"
                         sx={{
                           bgcolor: post.published ? 'rgba(112,255,140,0.12)' : 'rgba(212,175,55,0.12)',
