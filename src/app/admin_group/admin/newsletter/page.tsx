@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 
 export default async function AdminNewsletterPage() {
   const session = await requireRoles(['SUPERADMIN', 'EDITOR']);
-  const subscribers = await prisma.newsletterSubscribers.findMany({
+  const subscribers = await prisma.newsletterSubscriberss.findMany({
     orderBy: {
       createdAt: 'desc',
     },
