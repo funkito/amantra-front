@@ -2,58 +2,51 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireProductManager } from '@/lib/auth/guards';
 
-// Manejador para ELIMINAR etiquetas
+// 🗑️ Manejador para ELIMINAR etiquetas (con params asíncronos para Next.js)
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 👈 Tipado como Promesa para Vercel
 ) {
   try {
     const session = await requireProductManager();
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const tagId = params.id;
+    // Esperamos a que los parámetros se resuelvan
+    const { id: tagId } = await params;
 
-    // Buscamos si el ID es un número secuencial falso del frontend y resolvemos por nombre
-    // O si coincide con el ID String real de la BD.
     if (!isNaN(Number(tagId))) {
-      // Si el frontend mandó el índice numérico falso (ej: 1, 11), buscamos los tags ordenados para hallar el real
       const allTags = await prisma.tag.findMany({ orderBy: { name: 'asc' } });
       const targetIndex = Number(tagId) - 1;
       const realTag = allTags[targetIndex];
 
       if (realTag) {
         await prisma.tag.delete({ where: { id: realTag.id } });
-        return NextResponse.json({ success: true, message: 'Etiqueta eliminada con éxito' });
+        return NextResponse.json({ success: true });
       }
     } else {
-      // Si mandó el CUID real string
       await prisma.tag.delete({ where: { id: tagId } });
-      return NextResponse.json({ success: true, message: 'Etiqueta eliminada con éxito' });
+      return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json({ error: 'Etiqueta no encontrada' }, { status: 404 });
+    return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
   } catch (error: any) {
-    console.error("ERROR AL ELIMINAR TAG:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// Manejador para ACTUALIZAR etiquetas (Nombre e Imagen)
+// 💾 Manejador para ACTUALIZAR etiquetas (con params asíncronos para Next.js)
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 👈 Tipado como Promesa para Vercel
 ) {
   try {
     const session = await requireProductManager();
-    if (!session) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
     const { name, imageUrl } = await request.json();
-    const tagId = params.id;
-
+    
+    // Esperamos a que los parámetros se resuelvan
+    const { id: tagId } = await params;
     let targetId = tagId;
 
     if (!isNaN(Number(tagId))) {
@@ -64,15 +57,12 @@ export async function PUT(
       targetId = realTag.id;
     }
 
-    const updatedTag = await prisma.tag.update({
+    const updated = await prisma.tag.update({
       where: { id: targetId },
-      data: {
-        name,
-        imageUrl // ⚡ Aquí guardamos la URL de la imagen que configures
-      }
+      data: { name, imageUrl }
     });
 
-    return NextResponse.json({ success: true, data: updatedTag });
+    return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
