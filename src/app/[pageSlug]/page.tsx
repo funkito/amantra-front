@@ -27,18 +27,28 @@ export default async function Page({ params }: PageProps) {
   // Parseamos usando el tipo correcto que el builder conoce
   // Nos aseguramos de que blocks sea un array válido para evitar que falle el .map en el componente
 // Aseguramos que los bloques sean un array real
+// Aseguramos que los bloques sean un array real
 const safeBlocks = Array.isArray(page.blocks) 
   ? page.blocks 
   : typeof page.blocks === 'string' 
     ? JSON.parse(page.blocks) 
     : [];
 
- const pageDocument = {
+// Creamos un entorno seguro con las propiedades mínimas que el builder busca (como pageBg)
+const safeLayout = {
+  layout: safeBlocks,
+  pageBg: '#ffffff', // 👈 Evita el error 'Cannot read properties of undefined (reading pageBg)'
+  theme: 'light'
+};
+
+const pageDocument = {
   id: page.id,
   slug: page.pagePath,
   title: page.pagePath,
   blocks: safeBlocks,
-  layout: safeBlocks, // 👈 ¡La clave! Duplicamos como 'layout' por si el componente lo busca con este nombre
+  layout: safeBlocks, // Por compatibilidad si busca el array directo
+  config: safeLayout, // Por si busca la configuración envuelta
+  ...safeLayout,       // Inyectamos pageBg y layout directamente en la raíz del objeto por si el componente mapea el documento entero
   status: 'published', 
 };
 
