@@ -92,20 +92,37 @@ export default function BuilderProductGridSection({
       ).sort((left, right) => left.localeCompare(right, 'es')),
     [products]
   );
+  
+  
+  // 1. Extraemos los objetos de etiquetas reales con su imagen fija desde los productos
   const tagTileData = useMemo(
-    () =>
-      availableTags.map((tag) => {
-        const product = products.find((item) =>
-          getTagNames(item).some((productTag) => productTag.toLowerCase() === tag.toLowerCase())
-        );
+    () => {
+      const uniqueTagsMap = new Map<string, { tag: string; image: string }>();
 
-        return {
-          tag,
-          image: product?.images?.[0] ?? '',
-        };
-      }),
-    [availableTags, products]
+      products.forEach((product) => {
+        if (Array.isArray(product.tags)) {
+          product.tags.forEach((t) => {
+            if (typeof t === 'object' && t !== null && 'name' in t) {
+              const nameTrimmed = t.name.trim();
+              if (nameTrimmed && !uniqueTagsMap.has(nameTrimmed.toLowerCase())) {
+                uniqueTagsMap.set(nameTrimmed.toLowerCase(), {
+                  tag: nameTrimmed,
+                  image: (t as any).imageUrl || '', // 👈 ¡AQUÍ! Leemos la imagen fija de la etiqueta
+                });
+              }
+            }
+          });
+        }
+      });
+
+      return Array.from(uniqueTagsMap.values()).sort((left, right) =>
+        left.tag.localeCompare(right.tag, 'es')
+      );
+    },
+    [products]
   );
+
+  // Imagen para el botón "Todas" (puedes dejar la del primer producto o una fija)
   const allTagImage = products.find((product) => product.images[0])?.images[0] ?? '';
 
   const normalizedInitialTag = initialTag?.trim() || '';

@@ -5,7 +5,7 @@ import { requireProductManager } from '@/lib/auth/guards';
 // 🗑️ Manejador para ELIMINAR etiquetas (con params asíncronos para Next.js)
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // 👈 Tipado como Promesa para Vercel
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireProductManager();
@@ -37,18 +37,20 @@ export async function DELETE(
 // 💾 Manejador para ACTUALIZAR etiquetas (con params asíncronos para Next.js)
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } // 👈 Tipado como Promesa para Vercel
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireProductManager();
     if (!session) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
+    // 1. Extraemos de forma única los datos que vienen del formulario del administrador
     const { name, imageUrl } = await request.json();
     
-    // Esperamos a que los parámetros se resuelvan
+    // 2. Esperamos a que los parámetros de la URL se resuelvan
     const { id: tagId } = await params;
     let targetId = tagId;
 
+    // 3. Validación por si viene un índice en vez de un ID (tu compatibilidad con cPanel)
     if (!isNaN(Number(tagId))) {
       const allTags = await prisma.tag.findMany({ orderBy: { name: 'asc' } });
       const targetIndex = Number(tagId) - 1;
@@ -57,9 +59,13 @@ export async function PUT(
       targetId = realTag.id;
     }
 
+    // 4. Actualizamos en Prisma con la imagen unificada para la burbuja
     const updated = await prisma.tag.update({
       where: { id: targetId },
-      data: { name }
+      data: { 
+        name, 
+        imageUrl // 👈 Guardamos de forma fija la foto de la burbuja
+      }
     });
 
     return NextResponse.json({ success: true, data: updated });
