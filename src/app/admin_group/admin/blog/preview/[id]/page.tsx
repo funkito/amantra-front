@@ -65,10 +65,10 @@ export default async function AdminBlogPreviewPage(props: PageProps<'/admin_grou
             Volver al editor
           </Link>
           {post.published ? (
-            <Link href={`/blog/${post.slug}`} className="product-tag-link">
-              Abrir ruta pública
-            </Link>
-          ) : null}
+              <Link href={`/blog/${post.slug}`} className="product-tag-link">
+                Abrir ruta pública
+              </Link>
+            ) : null}
         </div>
       </div>
 
