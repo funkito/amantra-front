@@ -17,7 +17,7 @@ export default async function BuilderPreviewPage({ params }: BuilderPreviewPageP
   const { slug } = await params;
 
   const page = await prisma.pageLayout.findUnique({
-    where: { slug: slug },
+    where: { pagePath: slug },
     select: { blocks: true },
   });
 
