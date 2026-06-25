@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import PublicPageRenderer from '@/components/builder/render/PublicPageRenderer';
-import { BuilderBlockType } from '@/lib/builder/types'; // 👈 ¡Corregido aquí!
+import { BuilderBlockType } from '@/lib/builder/types';
 
 interface PageProps {
   params: Promise<{
@@ -27,10 +27,18 @@ export default async function Page({ params }: PageProps) {
   // Parseamos usando el tipo correcto que TypeScript ya conoce
   const blocks = (page.blocks as unknown as BuilderBlockType[]) || [];
 
+  // 💡 Adaptamos la estructura al formato 'PageBuilderDocument' que espera el componente
+  const pageDocument = {
+    id: page.id,
+    slug: page.slug,
+    title: page.title,
+    blocks: blocks,
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
-      {/* Renderizador de la tienda */}
-      <PublicPageRenderer blocks={blocks} />
+      {/* ⚡ Enviamos el prop exacto que 'PublicPageRenderer' necesita */}
+      <PublicPageRenderer document={pageDocument} />
     </div>
   );
 }
