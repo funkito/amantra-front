@@ -30,8 +30,8 @@ export default async function Page({ params }: PageProps) {
   // Estructura básica requerida para el renderizado visual
   const pageDocument = {
     id: page.id,
-    slug: page.slug,
-    title: page.title,
+    slug: page.pagePath,
+    title: page.pagePath,
     blocks: blocks,
     status: 'published', 
     theme: 'default',
