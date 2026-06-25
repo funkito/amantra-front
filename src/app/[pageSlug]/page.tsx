@@ -53,10 +53,10 @@ export default async function Page({ params }: PageProps) {
 // Para pre-renderizar las rutas en producción de manera óptima
 export async function generateStaticParams() {
   const pages = await prisma.pageLayout.findMany({
-    select: { slug: true },
+    select: { pagePath: true },
   });
 
   return pages.map((page) => ({
-    pageSlug: page.slug,
+    pageSlug: page.pagePath,
   }));
 }
