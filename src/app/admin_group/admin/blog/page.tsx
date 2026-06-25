@@ -52,7 +52,7 @@ export default async function AdminBlogPage() {
               slug: post.slug,
               excerpt: typeof contentObject.excerpt === 'string' ? contentObject.excerpt : '',
               tags: getPostTags(post.content),
-              published: post.published,
+              published: true,
               createdAt: post.createdAt.toISOString(),
               authorName: post.author.name ?? post.author.email,
             };
