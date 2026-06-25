@@ -16,7 +16,7 @@ export default async function Page({ params }: PageProps) {
   // Consulta apuntando al campo único real de la BD
   const page = await prisma.pageLayout.findUnique({
     where: {
-      pagePath: pageSlug,,
+      pagePath: pageSlug,
     },
   });
 
