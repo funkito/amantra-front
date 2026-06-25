@@ -25,7 +25,12 @@ export default async function Page({ params }: PageProps) {
   }
 
   // Parseamos usando el tipo correcto que el builder conoce
-  const blocks = (page.blocks as unknown as BuilderBlockType[]) || [];
+  // Nos aseguramos de que blocks sea un array válido para evitar que falle el .map en el componente
+const blocks = Array.isArray(page.blocks) 
+  ? page.blocks 
+  : typeof page.blocks === 'string' 
+    ? JSON.parse(page.blocks) 
+    : [];
 
   // Estructura básica requerida para el renderizado visual
   const pageDocument = {
