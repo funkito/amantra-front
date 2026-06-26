@@ -1,18 +1,66 @@
 import { NextResponse } from 'next/server';
-import { fetchBackendAdminApi, uploadProductImagesToBackend } from '@/lib/admin/backend-admin-api';
+import type { ProductStatus, ShippingMode } from '@prisma/client';
+import { v2 as cloudinary } from 'cloudinary';
+import { prisma } from '@/lib/prisma';
 import { getSessionFromCookies } from '@/lib/auth/session';
 import { buildProductPayload, validateProductPayload } from '@/lib/admin/products';
 
-function mapStatus(status: 'PUBLISHED' | 'DRAFT' | 'UNPUBLISHED') {
-  if (status === 'PUBLISHED') {
-    return 'published';
+export const runtime = 'nodejs';
+
+function configureCloudinary() {
+  const cloudinaryUrl = process.env.CLOUDINARY_URL;
+
+  if (!cloudinaryUrl) {
+    throw new Error('CLOUDINARY_URL no está configurada en las variables de entorno.');
   }
 
-  if (status === 'UNPUBLISHED') {
-    return 'unpublished';
+  const parsedUrl = new URL(cloudinaryUrl);
+
+  cloudinary.config({
+    cloud_name: parsedUrl.hostname,
+    api_key: decodeURIComponent(parsedUrl.username),
+    api_secret: decodeURIComponent(parsedUrl.password),
+    secure: true,
+  });
+}
+
+async function uploadProductImageToCloudinary(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  return new Promise<string>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'amantra/products',
+        resource_type: 'image',
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        if (!result?.secure_url) {
+          reject(new Error(`Cloudinary no devolvió URL segura para ${file.name}.`));
+          return;
+        }
+
+        resolve(result.secure_url);
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+}
+
+async function uploadProductImagesToCloudinary(files: File[]) {
+  if (files.length === 0) {
+    return [];
   }
 
-  return 'draft';
+  configureCloudinary();
+  return Promise.all(files.map((file) => uploadProductImageToCloudinary(file)));
 }
 
 async function authorizeProductManager() {
@@ -40,23 +88,13 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/prod
       const body = (await request.json()) as { action?: 'unpublish' };
 
       if (body.action === 'unpublish') {
-        const response = await fetchBackendAdminApi(`/products/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'unpublished' }),
+        const product = await prisma.product.update({
+          where: { id },
+          data: { status: 'UNPUBLISHED' },
+          include: { variants: true, tags: true },
         });
-        const result = (await response.json()) as { data?: unknown; error?: { message?: string } };
 
-        if (!response.ok) {
-          return NextResponse.json(
-            { error: result.error?.message ?? 'No fue posible despublicar el producto.' },
-            { status: response.status }
-          );
-        }
-
-        return NextResponse.json({ success: true, product: result.data });
+        return NextResponse.json({ success: true, product });
       }
 
       return NextResponse.json({ error: 'Acción inválida.' }, { status: 400 });
@@ -70,43 +108,54 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/prod
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const newImages = await uploadProductImagesToBackend(payload.imageFiles);
-    const images = [...payload.retainedImages, ...newImages];
+    const uploadedImages = await uploadProductImagesToCloudinary(payload.imageFiles);
+    const images = [...payload.retainedImages, ...uploadedImages];
 
     if (images.length === 0) {
       return NextResponse.json({ error: 'Debes mantener o subir al menos una imagen.' }, { status: 400 });
     }
 
-    const totalStock = payload.variants.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock) || 0), 0);
-    const response = await fetchBackendAdminApi(`/products/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: payload.name,
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name: payload.name,
         description: payload.description,
-        price: payload.basePrice,
-        stock: totalStock,
-        status: mapStatus(payload.status as 'PUBLISHED' | 'DRAFT' | 'UNPUBLISHED'),
-        images: images.map((url, index) => ({
-          url,
-          isPrimary: index === 0,
-          orderIndex: index,
-        })),
-        tags: payload.tags,
-      }),
+        basePrice: payload.basePrice,
+        status: payload.status as ProductStatus,
+        shippingMode: payload.shippingMode as ShippingMode,
+        shippingCost: payload.shippingCost,
+        shippingNotes: payload.shippingNotes,
+        images,
+        variants: {
+          deleteMany: {},
+          create: payload.variants.map((variant) => ({
+            sku: variant.sku,
+            size: variant.size,
+            color: variant.color,
+            stoneType: variant.stoneType,
+            stock: variant.stock,
+            price: variant.price,
+          })),
+        },
+        tags: {
+          set: [],
+          ...(payload.tags.length > 0
+            ? {
+                connectOrCreate: payload.tags.map((tag) => ({
+                  where: { name: tag },
+                  create: { name: tag },
+                })),
+              }
+            : {}),
+        },
+      },
+      include: {
+        variants: true,
+        tags: true,
+      },
     });
-    const result = (await response.json()) as { data?: unknown; error?: { message?: string } };
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: result.error?.message ?? 'No fue posible actualizar el producto en MariaDB.' },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json({ success: true, product: result.data });
+    return NextResponse.json({ success: true, product });
   } catch (error) {
     console.error('Admin product update error:', error);
     const message = error instanceof Error ? error.message : 'No fue posible actualizar el producto.';
@@ -123,17 +172,14 @@ export async function DELETE(_request: Request, ctx: RouteContext<'/api/admin/pr
     }
 
     const { id } = await ctx.params;
-    const response = await fetchBackendAdminApi(`/products/${id}`, {
-      method: 'DELETE',
-    });
-    const result = (await response.json()) as { error?: { message?: string } };
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: result.error?.message ?? 'No fue posible eliminar el producto.' },
-        { status: response.status }
-      );
-    }
+    await prisma.product.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        status: 'UNPUBLISHED',
+      },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

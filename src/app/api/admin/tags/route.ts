@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchBackendAdminApi } from '@/lib/admin/backend-admin-api';
+import { prisma } from '@/lib/prisma';
 import { getSessionFromCookies, isAdminRole } from '@/lib/auth/session';
 import { normalizeTag } from '@/lib/tags';
 
@@ -18,31 +18,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ tags: [] });
   }
 
-  const response = await fetchBackendAdminApi(
-    `/tags?query=${encodeURIComponent(query)}&limit=${isAdminList ? '200' : '10'}`
-  );
-  const payload = (await response.json()) as {
-    data?: Array<{ id: number; name: string; slug: string; _count?: { productTags?: number; blogTags?: number } }>;
-    error?: { message?: string };
-  };
-
-  if (!response.ok) {
-    return NextResponse.json({ error: payload.error?.message ?? 'No fue posible cargar etiquetas.' }, { status: 500 });
-  }
+  const tags = await prisma.tag.findMany({
+    where: query
+      ? {
+          name: {
+            contains: query,
+          },
+        }
+      : undefined,
+    orderBy: { name: 'asc' },
+    take: isAdminList ? 200 : 10,
+    include: {
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
 
   if (isAdminList) {
     return NextResponse.json({
-      tags: (payload.data ?? []).map((tag) => ({
-        id: tag.id,
+      tags: tags.map((tag, index) => ({
+        id: index + 1,
+        dbId: tag.id,
         name: tag.name,
-        slug: tag.slug,
-        productCount: tag._count?.productTags ?? 0,
-        blogCount: tag._count?.blogTags ?? 0,
+        imageUrl: tag.imageUrl ?? '',
+        slug: normalizeTag(tag.name).replace(/\s+/g, '-'),
+        productCount: tag._count.products,
+        blogCount: 0,
       })),
     });
   }
 
-  return NextResponse.json({ tags: (payload.data ?? []).map((tag) => tag.name) });
+  return NextResponse.json({ tags: tags.map((tag) => tag.name) });
 }
 
 export async function POST(request: Request) {
@@ -52,20 +61,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No autorizado.' }, { status: 401 });
   }
 
-  const body = (await request.json()) as { name?: string };
-  const response = await fetchBackendAdminApi('/tags/upsert', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: body.name }),
-  });
-  const payload = (await response.json()) as { data?: unknown; error?: { message?: string } };
+  const body = (await request.json()) as { name?: string; imageUrl?: string };
+  const name = normalizeTag(body.name ?? '');
 
-  if (!response.ok) {
-    return NextResponse.json(
-      { error: payload.error?.message ?? 'No fue posible crear la etiqueta.' },
-      { status: response.status }
-    );
+  if (!name) {
+    return NextResponse.json({ error: 'El nombre de la etiqueta es obligatorio.' }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true, tag: payload.data });
+  const tag = await prisma.tag.upsert({
+    where: { name },
+    update: {
+      imageUrl: body.imageUrl?.trim() || null,
+    },
+    create: {
+      name,
+      imageUrl: body.imageUrl?.trim() || null,
+    },
+  });
+
+  return NextResponse.json({ success: true, tag });
 }
