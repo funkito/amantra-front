@@ -36,6 +36,7 @@ type BackendTag = {
   id: number;
   name: string;
   slug: string;
+  imageUrl?: string | null;
 };
 
 type BackendProduct = {
@@ -71,6 +72,7 @@ export interface PublicProduct extends CatalogProduct {
   shippingCost: number;
   shippingNotes: string | null;
   tags: string[];
+  tagDetails: Array<{ name: string; imageUrl?: string | null }>;
   images: string[];
   variants: Array<{
     id: string;
@@ -85,6 +87,7 @@ export interface PublicProduct extends CatalogProduct {
 
 function mapBackendProduct(product: BackendProduct): PublicProduct {
   const tagNames = product.tags.map((tag) => tag.name);
+  const tagDetails = product.tags.map((tag) => ({ name: tag.name, imageUrl: tag.imageUrl ?? null }));
   const images = product.images
     .slice()
     .sort((left, right) => {
@@ -120,6 +123,7 @@ function mapBackendProduct(product: BackendProduct): PublicProduct {
     shippingCost,
     shippingNotes: null,
     tags: tagNames,
+    tagDetails,
     images,
     variants: [],
   };
@@ -134,6 +138,7 @@ type LocalProduct = Awaited<ReturnType<typeof getLocalPublishedProducts>>[number
 
 function mapLocalProduct(product: LocalProduct): PublicProduct {
   const tagNames = product.tags.map((tag) => tag.name);
+  const tagDetails = product.tags.map((tag) => ({ name: tag.name, imageUrl: tag.imageUrl ?? null }));
   const shippingCost = product.shippingMode === 'FIXED' ? product.shippingCost : 0;
   const totalStock = product.variants.reduce((sum, variant) => sum + variant.stock, 0);
 
@@ -159,6 +164,7 @@ function mapLocalProduct(product: LocalProduct): PublicProduct {
     shippingCost,
     shippingNotes: product.shippingNotes,
     tags: tagNames,
+    tagDetails,
     images: (product.images as string[]) ?? [],
     variants: product.variants.map((variant) => ({
       id: variant.id,
@@ -231,14 +237,22 @@ async function getLocalCatalogList({
         id: index + 1,
         name: tag.name,
         slug: tag.name.toLowerCase(),
+        imageUrl: tag.imageUrl ?? null,
       })),
     })),
-    tags: Array.from(new Set(products.flatMap((product) => product.tags.map((tag) => tag.name))))
-      .sort((left, right) => left.localeCompare(right, 'es'))
-      .map((name, index) => ({
+    tags: Array.from(
+      new Map(
+        products.flatMap((product) =>
+          product.tags.map((tag) => [tag.name.toLowerCase(), tag] as const)
+        )
+      ).values()
+    )
+      .sort((left, right) => left.name.localeCompare(right.name, 'es'))
+      .map((tag, index) => ({
         id: index + 1,
-        name,
-        slug: name.toLowerCase(),
+        name: tag.name,
+        slug: tag.name.toLowerCase(),
+        imageUrl: tag.imageUrl ?? null,
       })),
   };
 }
@@ -350,3 +364,5 @@ export const getRelatedProductsByTags = cache(
       .slice(0, limit);
   }
 );
+
+

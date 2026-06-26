@@ -10,7 +10,8 @@ type BuilderGridProduct = {
   images: string[];
   basePrice?: number;
   price?: number;
-  tags: Array<{ name: string }> | string[];
+  tags: Array<{ name: string; imageUrl?: string | null }> | string[];
+  tagDetails?: Array<{ name: string; imageUrl?: string | null }>;
 };
 
 interface BuilderProductGridSectionProps {
@@ -94,36 +95,36 @@ export default function BuilderProductGridSection({
   );
   
   
-  // 1. Extraemos los objetos de etiquetas reales con su imagen fija desde los productos
-  const tagTileData = useMemo(
-    () => {
-      const uniqueTagsMap = new Map<string, { tag: string; image: string }>();
+  const tagTileData = useMemo(() => {
+    const uniqueTagsMap = new Map<string, { tag: string; image: string }>();
 
-      products.forEach((product) => {
-        if (Array.isArray(product.tags)) {
-          product.tags.forEach((t) => {
-            if (typeof t === 'object' && t !== null && 'name' in t) {
-              const nameTrimmed = t.name.trim();
-              if (nameTrimmed && !uniqueTagsMap.has(nameTrimmed.toLowerCase())) {
-                uniqueTagsMap.set(nameTrimmed.toLowerCase(), {
-                  tag: nameTrimmed,
-                  image: (t as any).imageUrl || '', // 👈 ¡AQUÍ! Leemos la imagen fija de la etiqueta
-                });
-              }
-            }
-          });
+    products.forEach((product) => {
+      const detailedTags = product.tagDetails?.length
+        ? product.tagDetails
+        : product.tags
+            .filter((tag): tag is { name: string; imageUrl?: string | null } => typeof tag === 'object' && tag !== null)
+            .map((tag) => ({ name: tag.name, imageUrl: tag.imageUrl ?? null }));
+
+      detailedTags.forEach((tag) => {
+        const nameTrimmed = tag.name.trim();
+        const key = nameTrimmed.toLowerCase();
+
+        if (!nameTrimmed || uniqueTagsMap.has(key)) {
+          return;
         }
+
+        uniqueTagsMap.set(key, {
+          tag: nameTrimmed,
+          image: tag.imageUrl?.trim() || product.images[0] || '',
+        });
       });
+    });
 
-      return Array.from(uniqueTagsMap.values()).sort((left, right) =>
-        left.tag.localeCompare(right.tag, 'es')
-      );
-    },
-    [products]
-  );
+    return Array.from(uniqueTagsMap.values()).sort((left, right) => left.tag.localeCompare(right.tag, 'es'));
+  }, [products]);
 
-  // Imagen para el botón "Todas" (puedes dejar la del primer producto o una fija)
-  const allTagImage = products.find((product) => product.images[0])?.images[0] ?? '';
+  const allTagImage =
+    tagTileData.find((item) => item.image)?.image || products.find((product) => product.images[0])?.images[0] || '';
 
   const normalizedInitialTag = initialTag?.trim() || '';
   const [activeTag, setActiveTag] = useState(
@@ -309,3 +310,4 @@ export default function BuilderProductGridSection({
     </section>
   );
 }
+

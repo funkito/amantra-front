@@ -21,9 +21,9 @@ import {
 
 export type AdminTagRow = {
   id: number;
-  dbId?: string; // Soportamos el ID real de la Base de Datos
+  dbId?: string;
   name: string;
-  imageUrl?: string; // 👈 Habilitamos la propiedad de la imagen en el tipado frontend
+  imageUrl?: string;
   slug: string;
   productCount: number;
   blogCount: number;
@@ -49,9 +49,10 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
   const [isPending, startTransition] = useTransition();
   const [tags, setTags] = useState(initialTags);
   const [newTagName, setNewTagName] = useState('');
-  const [newTagImageUrl, setNewTagImageUrl] = useState(''); // 👈 Estado para la foto del nuevo Tag
+  const [newTagImageUrl, setNewTagImageUrl] = useState('');
   const [editing, setEditing] = useState<Record<number, string>>({});
-  const [editingImage, setEditingImage] = useState<Record<number, string>>({}); // 👈 Estado para editar fotos existentes
+  const [editingImage, setEditingImage] = useState<Record<number, string>>({});
+  const [uploadingImageFor, setUploadingImageFor] = useState<'new' | number | null>(null);
   const [toast, setToast] = useState<{ severity: 'success' | 'error'; message: string } | null>(null);
 
   const refreshTags = async () => {
@@ -65,9 +66,44 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
     setTags(data.tags ?? []);
   };
 
+  const uploadTagImage = async (file: File, target: 'new' | number) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    setUploadingImageFor(target);
+
+    try {
+      const response = await fetch('/api/admin/tags/media', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = (await response.json()) as { url?: string; error?: string };
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error ?? 'No fue posible subir la imagen.');
+      }
+
+      const uploadedUrl = data.url;
+
+      if (target === 'new') {
+        setNewTagImageUrl(uploadedUrl);
+      } else {
+        setEditingImage((current) => ({ ...current, [target]: uploadedUrl }));
+      }
+
+      setToast({ severity: 'success', message: 'Imagen subida. Recuerda guardar la etiqueta.' });
+    } catch (error) {
+      setToast({
+        severity: 'error',
+        message: error instanceof Error ? error.message : 'No fue posible subir la imagen.',
+      });
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
+
   const createTag = () => {
     const name = newTagName.trim();
-    const imageUrl = newTagImageUrl.trim(); // 👈 Capturamos la URL de la imagen
+    const imageUrl = newTagImageUrl.trim();
 
     if (!name) {
       return;
@@ -78,7 +114,7 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
         const response = await fetch('/api/admin/tags', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, imageUrl }), // 👈 Mandamos la imagen a la API de creación
+          body: JSON.stringify({ name, imageUrl }),
         });
         const data = (await response.json()) as { error?: string };
 
@@ -87,7 +123,7 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
         }
 
         setNewTagName('');
-        setNewTagImageUrl(''); // Limpiamos la caja
+        setNewTagImageUrl('');
         await refreshTags();
         setToast({ severity: 'success', message: 'Etiqueta guardada con su imagen.' });
       } catch (error) {
@@ -101,7 +137,7 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
 
   const updateTag = (tag: AdminTagRow) => {
     const name = (editing[tag.id] ?? tag.name).trim();
-    const imageUrl = (editingImage[tag.id] ?? tag.imageUrl ?? '').trim(); // 👈 Capturamos la nueva imagen editada
+    const imageUrl = (editingImage[tag.id] ?? tag.imageUrl ?? '').trim();
 
     if (!name) {
       return;
@@ -109,10 +145,10 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
 
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/admin/tags/${tag.id}`, {
-          method: 'PUT', // Cambiado a PUT para alinearlo con tu manejador asíncrono
+        const response = await fetch(`/api/admin/tags/${tag.dbId ?? tag.id}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, imageUrl }), // 👈 Mandamos nombre e imagen actualizados
+          body: JSON.stringify({ name, imageUrl }),
         });
         const data = (await response.json()) as { error?: string };
 
@@ -148,7 +184,7 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
 
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/admin/tags/${tag.id}`, {
+        const response = await fetch(`/api/admin/tags/${tag.dbId ?? tag.id}`, {
           method: 'DELETE',
         });
         const data = (await response.json()) as { error?: string };
@@ -186,11 +222,11 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
             Administrador de etiquetas
           </Typography>
           <Typography sx={{ color: '#BDBDBD', mt: 0.8 }}>
-            Normaliza nombres, fusiona duplicados y asigna imágenes fijas para personalizar las tarjetas del catálogo.
+            Normaliza nombres y asigna una imagen fija para que las tarjetas del catálogo no repitan fotos de productos.
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.4}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.4} sx={{ alignItems: 'flex-start' }}>
           <TextField
             fullWidth
             label="Nueva etiqueta"
@@ -198,14 +234,37 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
             onChange={(event) => setNewTagName(event.target.value)}
             sx={fieldSx}
           />
-          <TextField
-            fullWidth
-            label="URL de Imagen (Burbuja / Tarjeta)"
-            placeholder="ej: /images/aceites.jpg"
-            value={newTagImageUrl}
-            onChange={(event) => setNewTagImageUrl(event.target.value)}
-            sx={fieldSx}
-          />
+          <Stack spacing={1} sx={{ flex: 1, width: '100%' }}>
+            <TextField
+              fullWidth
+              label="URL de Imagen (Burbuja / Tarjeta)"
+              placeholder="Sube una imagen o pega una URL"
+              value={newTagImageUrl}
+              onChange={(event) => setNewTagImageUrl(event.target.value)}
+              sx={fieldSx}
+            />
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              {newTagImageUrl ? <TagImagePreview src={newTagImageUrl} alt="Nueva etiqueta" /> : null}
+              <Button
+                component="label"
+                disabled={uploadingImageFor === 'new'}
+                variant="outlined"
+                sx={{ borderColor: 'rgba(212,175,55,0.25)', color: '#D4AF37' }}
+              >
+                {uploadingImageFor === 'new' ? 'Subiendo...' : 'Subir imagen'}
+                <input
+                  hidden
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.currentTarget.value = '';
+                    if (file) void uploadTagImage(file, 'new');
+                  }}
+                />
+              </Button>
+            </Stack>
+          </Stack>
           <Button
             type="button"
             onClick={createTag}
@@ -221,8 +280,8 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)', width: '25%' }}>Etiqueta</TableCell>
-                <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)', width: '30%' }}>URL Imagen</TableCell>
+                <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)', width: '24%' }}>Etiqueta</TableCell>
+                <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)', width: '34%' }}>Imagen personalizada</TableCell>
                 <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)' }}>Slug</TableCell>
                 <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)' }}>Uso</TableCell>
                 <TableCell sx={{ color: '#D4AF37', borderColor: 'rgba(212,175,55,0.1)' }}>Acciones</TableCell>
@@ -230,12 +289,13 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
             </TableHead>
             <TableBody>
               {tags.map((tag) => {
+                const currentImageUrl = editingImage[tag.id] ?? tag.imageUrl ?? '';
                 const isNameChanged = (editing[tag.id] ?? tag.name).trim() !== tag.name;
-                const isImageChanged = (editingImage[tag.id] ?? tag.imageUrl ?? '').trim() !== (tag.imageUrl ?? '');
+                const isImageChanged = currentImageUrl.trim() !== (tag.imageUrl ?? '');
                 const hasChanges = isNameChanged || isImageChanged;
 
                 return (
-                  <TableRow key={tag.id} sx={{ '& td': { borderColor: 'rgba(212,175,55,0.08)' } }}>
+                  <TableRow key={tag.dbId ?? tag.id} sx={{ '& td': { borderColor: 'rgba(212,175,55,0.08)' } }}>
                     <TableCell>
                       <TextField
                         fullWidth
@@ -250,18 +310,42 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
                       />
                     </TableCell>
                     <TableCell>
-                      <TextField
-                        fullWidth
-                        placeholder="Sin imagen (Vacío)"
-                        value={editingImage[tag.id] ?? tag.imageUrl ?? ''}
-                        onChange={(event) =>
-                          setEditingImage((current) => ({
-                            ...current,
-                            [tag.id]: event.target.value,
-                          }))
-                        }
-                        sx={fieldSx}
-                      />
+                      <Stack spacing={1}>
+                        <TextField
+                          fullWidth
+                          placeholder="Sin imagen"
+                          value={currentImageUrl}
+                          onChange={(event) =>
+                            setEditingImage((current) => ({
+                              ...current,
+                              [tag.id]: event.target.value,
+                            }))
+                          }
+                          sx={fieldSx}
+                        />
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          {currentImageUrl ? <TagImagePreview src={currentImageUrl} alt={tag.name} /> : null}
+                          <Button
+                            component="label"
+                            disabled={uploadingImageFor === tag.id}
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderColor: 'rgba(212,175,55,0.25)', color: '#D4AF37' }}
+                          >
+                            {uploadingImageFor === tag.id ? 'Subiendo...' : 'Subir'}
+                            <input
+                              hidden
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                event.currentTarget.value = '';
+                                if (file) void uploadTagImage(file, tag.id);
+                              }}
+                            />
+                          </Button>
+                        </Stack>
+                      </Stack>
                     </TableCell>
                     <TableCell sx={{ color: '#D7D0C3' }}>{tag.slug}</TableCell>
                     <TableCell>
@@ -315,3 +399,22 @@ export default function TagManagementPanel({ initialTags }: TagManagementPanelPr
     </>
   );
 }
+
+function TagImagePreview({ src, alt }: { src: string; alt: string }) {
+  return (
+    <Box
+      component="img"
+      src={src}
+      alt={alt}
+      sx={{
+        width: 86,
+        height: 48,
+        objectFit: 'cover',
+        borderRadius: '10px',
+        border: '1px solid rgba(212,175,55,0.16)',
+        bgcolor: 'rgba(255,255,255,0.04)',
+      }}
+    />
+  );
+}
+
