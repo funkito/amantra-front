@@ -176,7 +176,7 @@ export default function BuilderProductGridSection({
       <div style={{ display: 'grid', gap: 18 }}>
         <div>
           <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(2rem, 4vw, 3.2rem)' }}>{title}</h2>
-          <p style={{ margin: 0, color: 'rgba(245,239,228,0.78)', lineHeight: 1.8 }}>{body}</p>
+          <p style={{ margin: 0, color: 'rgba(75,64,56,0.72)', lineHeight: 1.8 }}>{body}</p>
         </div>
 
         {availableTags.length > 0 && tagStyle === 'tiles' ? (
@@ -285,12 +285,14 @@ export default function BuilderProductGridSection({
             <article
               key={product.id}
               style={{
-                minHeight: 220,
+                minHeight: 430,
                 borderRadius: 22,
                 padding: 18,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(212,175,55,0.12)',
+                background: 'rgba(255,250,240,0.74)',
+                border: '1px solid rgba(196,145,45,0.18)',
+                boxShadow: '0 16px 36px rgba(98,74,48,0.08)',
                 display: 'grid',
+                gridTemplateRows: 'auto auto auto 1fr auto auto',
                 alignContent: 'start',
                 alignItems: 'start',
               }}
@@ -298,27 +300,68 @@ export default function BuilderProductGridSection({
               {product.images[0] ? (
                 <div
                   style={{
+                    width: '100%',
                     minHeight: 150,
                     borderRadius: 16,
                     marginBottom: 14,
-                    background: `linear-gradient(rgba(20,14,10,0.14), rgba(20,14,10,0.14)), url(${product.images[0]}) center / cover no-repeat`,
+                    background: `linear-gradient(rgba(20,14,10,0.04), rgba(20,14,10,0.04)), url(${product.images[0]}) center / cover no-repeat`,
                   }}
                 />
               ) : null}
 
-              <div style={{ color: '#D4AF37', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              <div
+                style={{
+                  width: '100%',
+                  color: '#c4912d',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.16em',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                }}
+              >
                 Producto
               </div>
-              <h3 style={{ margin: '8px 0 6px', fontSize: 22 }}>{truncateText(product.name, 82)}</h3>
-              <p style={{ margin: 0, color: 'rgba(245,239,228,0.76)', lineHeight: 1.7 }}>
-                {truncateText(product.description || 'Producto destacado desde el catálogo publicado de Amantra.', 180)}
+              <h3
+                style={{
+                  display: '-webkit-box',
+                  minHeight: '6.25rem',
+                  margin: '8px 0 8px',
+                  overflow: 'hidden',
+                  color: '#1f1a16',
+                  fontSize: 'clamp(1.08rem, 1.35vw, 1.32rem)',
+                  fontWeight: 650,
+                  lineHeight: 1.25,
+                  textAlign: 'center',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 4,
+                }}
+              >
+                {truncateText(product.name, 92)}
+              </h3>
+              <p
+                style={{
+                  display: '-webkit-box',
+                  minHeight: '5.4rem',
+                  margin: 0,
+                  overflow: 'hidden',
+                  color: 'rgba(75,64,56,0.76)',
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  textAlign: 'center',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 4,
+                }}
+              >
+                {truncateText(product.description || 'Producto destacado desde el catálogo publicado de Amantra.', 170)}
               </p>
-              <div style={{ marginTop: 12, color: '#D4AF37', fontWeight: 800 }}>
+              <div style={{ marginTop: 14, color: '#a96f1f', fontWeight: 800 }}>
                 {currency.format(product.price ?? product.basePrice ?? 0)}
               </div>
               <a
                 href={`/products/${product.slug ?? product.id}`}
                 style={{
+                  justifySelf: 'center',
                   marginTop: 14,
                   display: 'inline-flex',
                   alignItems: 'center',
