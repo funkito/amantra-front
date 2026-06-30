@@ -168,10 +168,10 @@ export const builderBlockLibrary: BuilderBlockDefinition[] = [
         productTagShowImages: true,
         productTagTileBackgroundColor: '#fbf4e8',
         productTagTileTextColor: '#31513d',
-        productTagTileActiveBackgroundColor: '#f2dfb3',
+        productTagTileActiveBackgroundColor: '#fff7e8',
         productTagTileActiveTextColor: '#140e0a',
         productTagTileBorderColor: 'rgba(196,145,45,0.22)',
-        productTagTileOverlayColor: 'rgba(255,248,235,0.52)',
+        productTagTileOverlayColor: 'transparent',
       },
     },
   },
@@ -507,3 +507,4 @@ export function getBlockDefinition(type: BuilderBlockType) {
 export function getBuilderTemplate(templateId: string) {
   return builderSectionTemplates.find((template) => template.id === templateId);
 }
+

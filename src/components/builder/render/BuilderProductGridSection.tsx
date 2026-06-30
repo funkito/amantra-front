@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Flame, Gem, Gift, Leaf, Package, Sparkles, Wind } from 'lucide-react';
 
 type BuilderGridProduct = {
   id: string;
@@ -49,6 +50,35 @@ function truncateText(value: string, maxLength: number) {
   return `${normalized.slice(0, maxLength).trimEnd()}...`;
 }
 
+function getCategoryIcon(tag: string) {
+  const normalized = tag.toLowerCase();
+
+  if (normalized.includes('aceite') || normalized.includes('aroma')) {
+    return Leaf;
+  }
+
+  if (normalized.includes('cuenco') || normalized.includes('sonor')) {
+    return Wind;
+  }
+
+  if (normalized.includes('cristal') || normalized.includes('geoda')) {
+    return Gem;
+  }
+
+  if (normalized.includes('anillo') || normalized.includes('joya')) {
+    return Sparkles;
+  }
+
+  if (normalized.includes('limpieza') || normalized.includes('energia')) {
+    return Flame;
+  }
+
+  if (normalized.includes('pack') || normalized.includes('regalo')) {
+    return Gift;
+  }
+
+  return Package;
+}
 function getGridCardWidth(columns: 1 | 2 | 3 | 4) {
   switch (columns) {
     case 1:
@@ -156,22 +186,23 @@ export default function BuilderProductGridSection({
               onClick={() => setActiveTag('')}
               className="builder-product-category-tile"
               style={{
-                backgroundColor: activeTag ? tagTileBackgroundColor : tagTileActiveBackgroundColor || accentColor,
+                backgroundColor: activeTag ? tagTileBackgroundColor : tagTileActiveBackgroundColor || '#fff7e8',
                 borderColor: tagTileBorderColor,
                 color: activeTag ? tagTileTextColor : tagTileActiveTextColor,
               }}
             >
               {tagShowImages && allTagImage ? (
-                <span
-                  className="builder-product-category-image"
-                  style={{ backgroundImage: `linear-gradient(${tagTileOverlayColor}, ${tagTileOverlayColor}), url(${allTagImage})` }}
-                />
+                <span className="builder-product-category-image" style={{ backgroundImage: `url(${allTagImage})` }} />
               ) : null}
+              <span className="builder-product-category-icon" aria-hidden="true">
+                <Package size={24} strokeWidth={1.6} />
+              </span>
               <span className="builder-product-category-label">{tagAllLabel}</span>
             </button>
 
             {tagTileData.map((item) => {
               const selected = activeTag.toLowerCase() === item.tag.toLowerCase();
+              const Icon = getCategoryIcon(item.tag);
 
               return (
                 <button
@@ -180,17 +211,17 @@ export default function BuilderProductGridSection({
                   onClick={() => setActiveTag(item.tag)}
                   className="builder-product-category-tile"
                   style={{
-                    backgroundColor: selected ? tagTileActiveBackgroundColor || accentColor : tagTileBackgroundColor,
+                    backgroundColor: selected ? tagTileActiveBackgroundColor || '#fff7e8' : tagTileBackgroundColor,
                     borderColor: tagTileBorderColor,
                     color: selected ? tagTileActiveTextColor : tagTileTextColor,
                   }}
                 >
                   {tagShowImages && item.image ? (
-                    <span
-                      className="builder-product-category-image"
-                      style={{ backgroundImage: `linear-gradient(${tagTileOverlayColor}, ${tagTileOverlayColor}), url(${item.image})` }}
-                    />
+                    <span className="builder-product-category-image" style={{ backgroundImage: `url(${item.image})` }} />
                   ) : null}
+                  <span className="builder-product-category-icon" aria-hidden="true">
+                    <Icon size={24} strokeWidth={1.6} />
+                  </span>
                   <span className="builder-product-category-label">{item.tag}</span>
                 </button>
               );
@@ -310,4 +341,5 @@ export default function BuilderProductGridSection({
     </section>
   );
 }
+
 

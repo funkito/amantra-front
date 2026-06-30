@@ -43,10 +43,9 @@ export default function ProductGridPreview({ block, selected = false }: ProductG
             key={tag}
             className="builder-product-category-tile"
             style={{
-              minHeight: 86,
               backgroundColor:
                 index === 0
-                  ? block.content.productTagTileActiveBackgroundColor || '#f2dfb3'
+                  ? block.content.productTagTileActiveBackgroundColor || '#fff7e8'
                   : block.content.productTagTileBackgroundColor || '#fbf4e8',
               borderColor: block.content.productTagTileBorderColor || 'rgba(196,145,45,0.22)',
               color:
@@ -60,10 +59,11 @@ export default function ProductGridPreview({ block, selected = false }: ProductG
               style={{
                 background:
                   index === 0
-                    ? 'linear-gradient(rgba(255,248,235,0.62), rgba(255,248,235,0.62)), radial-gradient(circle at 70% 40%, rgba(212,175,55,0.45), transparent 34%)'
-                    : 'linear-gradient(rgba(255,248,235,0.62), rgba(255,248,235,0.62)), radial-gradient(circle at 70% 40%, rgba(49,81,61,0.18), transparent 34%)',
+                    ? 'radial-gradient(circle at 70% 40%, rgba(212,175,55,0.34), transparent 34%), linear-gradient(135deg, #fff7e8, #f1dec0)'
+                    : 'radial-gradient(circle at 70% 40%, rgba(49,81,61,0.16), transparent 34%), linear-gradient(135deg, #fff7e8, #f6ead8)',
               }}
             />
+            <span className="builder-product-category-icon" aria-hidden="true">✧</span>
             <span className="builder-product-category-label">{index === 0 ? block.content.productTagAllLabel || tag : tag}</span>
           </span>
         ))}

@@ -22,10 +22,10 @@ type ProductGridTagKey = keyof Pick<
 const colorFields: Array<{ key: ProductGridTagKey; label: string; fallback: string }> = [
   { key: 'productTagTileBackgroundColor', label: 'Fondo tarjeta', fallback: '#fbf4e8' },
   { key: 'productTagTileTextColor', label: 'Texto tarjeta', fallback: '#31513d' },
-  { key: 'productTagTileActiveBackgroundColor', label: 'Fondo activo', fallback: '#f2dfb3' },
+  { key: 'productTagTileActiveBackgroundColor', label: 'Fondo activo', fallback: '#fff7e8' },
   { key: 'productTagTileActiveTextColor', label: 'Texto activo', fallback: '#140e0a' },
   { key: 'productTagTileBorderColor', label: 'Borde', fallback: '#d8c296' },
-  { key: 'productTagTileOverlayColor', label: 'Capa sobre imagen', fallback: 'rgba(255,248,235,0.52)' },
+  { key: 'productTagTileOverlayColor', label: 'Overlay opcional', fallback: 'transparent' },
 ];
 
 export default function ProductGridTagsEditor({ block }: ProductGridTagsEditorProps) {
@@ -40,7 +40,7 @@ export default function ProductGridTagsEditor({ block }: ProductGridTagsEditorPr
       <div>
         <div style={sectionKickerStyle}>Etiquetas visuales</div>
         <p style={helperStyle}>
-          Convierte las etiquetas del catálogo en tarjetas editables con imagen, color y estado activo.
+          Convierte las etiquetas del catálogo en tarjetas premium con imagen limpia, icono y texto elegante.
         </p>
       </div>
 
@@ -67,7 +67,7 @@ export default function ProductGridTagsEditor({ block }: ProductGridTagsEditorPr
             })
           }
         />
-        Mostrar imagen de producto en cada etiqueta
+        Mostrar imagen personalizada de cada etiqueta
       </label>
 
       <TextField
@@ -190,3 +190,4 @@ const colorInputStyle: CSSProperties = {
   padding: 2,
   cursor: 'pointer',
 };
+
