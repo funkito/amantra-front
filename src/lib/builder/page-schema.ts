@@ -73,7 +73,7 @@ export const builderBlockContentSchema = z.object({
 
 export const builderBlockNodeSchema = z.object({
   id: z.string(),
-  type: z.enum(['site_menu', 'hero', 'section', 'columns', 'product_grid', 'blog_grid', 'featured_product', 'blog_teaser', 'rich_text', 'image_banner', 'wellness_banner', 'newsletter_cta']),
+  type: z.enum(['site_menu', 'hero', 'section', 'columns', 'product_grid', 'product_promo_rail', 'blog_grid', 'featured_product', 'blog_teaser', 'rich_text', 'image_banner', 'wellness_banner', 'newsletter_cta']),
   order: z.number().int().nonnegative(),
   props: builderBlockPropsSchema,
   content: builderBlockContentSchema,

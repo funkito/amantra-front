@@ -17,6 +17,7 @@ export type BuilderBlockType =
   | 'section'
   | 'columns'
   | 'product_grid'
+  | 'product_promo_rail'
   | 'blog_grid'
   | 'featured_product'
   | 'blog_teaser'

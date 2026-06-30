@@ -517,7 +517,7 @@ export default function BuilderInspector() {
               </label>
             </div>
 
-            {selectedBlock.type === 'product_grid' ? (
+            {(selectedBlock.type === 'product_grid' || selectedBlock.type === 'product_promo_rail') ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                 <label style={{ display: 'grid', gap: 6 }}>
                   <span style={{ color: '#D4AF37', fontSize: 13 }}>Columnas</span>

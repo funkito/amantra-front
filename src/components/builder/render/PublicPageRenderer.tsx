@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import NewsletterSignupForm from '@/components/storefront/NewsletterSignupForm';
 import SiteMenu from '@/components/storefront/SiteMenu';
 import BuilderProductGridSection from '@/components/builder/render/BuilderProductGridSection';
+import BuilderProductPromoRailSection from '@/components/builder/render/BuilderProductPromoRailSection';
 import BuilderBlogGridSection from '@/components/builder/render/BuilderBlogGridSection';
 import WellnessBannerBlock from '@/components/blocks/WellnessBannerBlock';
 
@@ -246,6 +247,25 @@ function PublicBlockRenderer({
               tagTileActiveTextColor={block.content.productTagTileActiveTextColor}
               tagTileBorderColor={block.content.productTagTileBorderColor}
               tagTileOverlayColor={block.content.productTagTileOverlayColor}
+            />
+          </div>
+        </section>
+      );
+    case 'product_promo_rail':
+      return (
+        <section style={outerStyle}>
+          <div style={innerStyle}>
+            <BuilderProductPromoRailSection
+              title={block.content.title}
+              body={block.content.body}
+              eyebrow={block.content.eyebrow}
+              products={dynamicData.publishedProducts}
+              productTag={block.content.productTag}
+              accentColor={accentColor}
+              limit={block.props.limit ?? 8}
+              ctaLabel={block.content.ctaLabel}
+              ctaHref={block.content.ctaHref}
+              badgeLabel={block.content.subtitle || 'Promo'}
             />
           </div>
         </section>

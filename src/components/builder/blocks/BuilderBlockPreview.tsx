@@ -8,6 +8,7 @@ const SiteMenuPreview = dynamic(() => import('@/components/builder/blocks/previe
 const SectionPreview = dynamic(() => import('@/components/builder/blocks/previews/SectionPreview'));
 const ColumnsPreview = dynamic(() => import('@/components/builder/blocks/previews/ColumnsPreview'));
 const ProductGridPreview = dynamic(() => import('@/components/builder/blocks/previews/ProductGridPreview'));
+const ProductPromoRailPreview = dynamic(() => import('@/components/builder/blocks/previews/ProductPromoRailPreview'));
 const BlogGridPreview = dynamic(() => import('@/components/builder/blocks/previews/BlogGridPreview'));
 const FeaturedProductPreview = dynamic(() => import('@/components/builder/blocks/previews/FeaturedProductPreview'));
 const BlogTeaserPreview = dynamic(() => import('@/components/builder/blocks/previews/BlogTeaserPreview'));
@@ -33,6 +34,8 @@ export default function BuilderBlockPreview({ block, selected = false }: Builder
       return <ColumnsPreview block={block} selected={selected} />;
     case 'product_grid':
       return <ProductGridPreview block={block} selected={selected} />;
+    case 'product_promo_rail':
+      return <ProductPromoRailPreview block={block} selected={selected} />;
     case 'blog_grid':
       return <BlogGridPreview block={block} selected={selected} />;
     case 'featured_product':
