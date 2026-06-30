@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Flame, Gem, Gift, Leaf, Package, Sparkles, Wind } from 'lucide-react';
 
 type BuilderGridProduct = {
@@ -160,6 +160,14 @@ export default function BuilderProductGridSection({
   const [activeTag, setActiveTag] = useState(
     normalizedInitialTag && availableTags.includes(normalizedInitialTag) ? normalizedInitialTag : ''
   );
+  const productsGridRef = useRef<HTMLDivElement | null>(null);
+
+  const selectTagAndScroll = (tag: string) => {
+    setActiveTag(tag);
+    window.requestAnimationFrame(() => {
+      productsGridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   const visibleProducts = useMemo(() => {
     const baseProducts = activeTag
@@ -180,10 +188,14 @@ export default function BuilderProductGridSection({
         </div>
 
         {availableTags.length > 0 && tagStyle === 'tiles' ? (
-          <div className="builder-product-category-rail" aria-label="Filtrar productos por categoría">
+          <div
+            className="builder-product-category-rail"
+            aria-label="Filtrar productos por categoría"
+            style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${cardWidth}, ${cardWidth}))`, justifyContent: 'start' }}
+          >
             <button
               type="button"
-              onClick={() => setActiveTag('')}
+              onClick={() => selectTagAndScroll('')}
               className="builder-product-category-tile"
               style={{
                 backgroundColor: activeTag ? tagTileBackgroundColor : tagTileActiveBackgroundColor || '#fff7e8',
@@ -208,7 +220,7 @@ export default function BuilderProductGridSection({
                 <button
                   key={item.tag}
                   type="button"
-                  onClick={() => setActiveTag(item.tag)}
+                  onClick={() => selectTagAndScroll(item.tag)}
                   className="builder-product-category-tile"
                   style={{
                     backgroundColor: selected ? tagTileActiveBackgroundColor || '#fff7e8' : tagTileBackgroundColor,
@@ -233,7 +245,7 @@ export default function BuilderProductGridSection({
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
             <button
               type="button"
-              onClick={() => setActiveTag('')}
+              onClick={() => selectTagAndScroll('')}
               style={{
                 padding: '10px 14px',
                 borderRadius: 999,
@@ -254,7 +266,7 @@ export default function BuilderProductGridSection({
                 <button
                   key={tag}
                   type="button"
-                  onClick={() => setActiveTag(tag)}
+                  onClick={() => selectTagAndScroll(tag)}
                   style={{
                     padding: '10px 14px',
                     borderRadius: 999,
@@ -273,7 +285,10 @@ export default function BuilderProductGridSection({
         ) : null}
 
         <div
+          ref={productsGridRef}
+          id="productos-filtrados"
           style={{
+            scrollMarginTop: 96,
             display: 'grid',
             gridTemplateColumns: `repeat(auto-fit, minmax(${cardWidth}, ${cardWidth}))`,
             gap: 16,
