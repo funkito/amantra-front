@@ -61,10 +61,10 @@ export default function CustomerAccessForm({ nextPath }: CustomerAccessFormProps
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <button type="button" className={mode === 'login' ? 'checkout-button' : 'ghost-button'} onClick={() => setMode('login')}>
+        <button type="button" className={mode === 'login' ? 'checkout-button' : 'ghost-button'} onClick={() => { setMode('login'); setError(''); }}>
           Iniciar sesión
         </button>
-        <button type="button" className={mode === 'register' ? 'checkout-button' : 'ghost-button'} onClick={() => setMode('register')}>
+        <button type="button" className={mode === 'register' ? 'checkout-button' : 'ghost-button'} onClick={() => { setMode('register'); setError(''); }}>
           Crear cuenta
         </button>
       </div>
