@@ -28,6 +28,8 @@ export function normalizeBlogTags(value: string | string[]) {
   return Array.from(unique);
 }
 
+export type BlogAccessType = 'PUBLIC' | 'PAID_WORKSHOP';
+
 interface BlogPayload {
   title: string;
   slug: string;
@@ -35,6 +37,22 @@ interface BlogPayload {
   body: string;
   coverImage?: string;
   tags: string[];
+  accessType: BlogAccessType;
+  workshopPrice: number | null;
+}
+
+export function normalizeBlogAccessType(value: unknown, tags: string[]): BlogAccessType {
+  const hasWorkshopTag = tags.some((tag) => tag.trim().toLowerCase() === 'talleres online');
+  return value === 'PAID_WORKSHOP' || hasWorkshopTag ? 'PAID_WORKSHOP' : 'PUBLIC';
+}
+
+export function normalizeWorkshopPrice(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const price = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(price) ? price : null;
 }
 
 export function validateBlogPayload(payload: BlogPayload) {
@@ -54,6 +72,10 @@ export function validateBlogPayload(payload: BlogPayload) {
     return 'El contenido del artículo es obligatorio.';
   }
 
+  if (payload.accessType === 'PAID_WORKSHOP' && (!payload.workshopPrice || payload.workshopPrice <= 0)) {
+    return 'El precio del taller debe ser mayor que cero.';
+  }
+
   return null;
 }
 
@@ -63,5 +85,7 @@ export function buildBlogContentData(payload: BlogPayload) {
     coverImage: payload.coverImage?.trim() ?? '',
     body: sanitizeBlogHtml(payload.body),
     tags: payload.tags,
+    accessType: payload.accessType,
+    workshopPrice: payload.accessType === 'PAID_WORKSHOP' ? payload.workshopPrice : null,
   };
 }

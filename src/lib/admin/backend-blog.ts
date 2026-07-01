@@ -47,11 +47,26 @@ export type AdminBackendBlogFormData = {
   coverImage: string;
   tags: string[];
   published: boolean;
+  accessType: 'PUBLIC' | 'PAID_WORKSHOP';
+  workshopPrice: number | null;
 };
 
 function getStringField(content: Record<string, unknown>, field: 'excerpt' | 'body' | 'coverImage') {
   const value = content[field];
   return typeof value === 'string' ? value : '';
+}
+
+function getWorkshopSettings(content: Record<string, unknown>) {
+  const accessType = content.accessType === 'PAID_WORKSHOP' ? 'PAID_WORKSHOP' : 'PUBLIC';
+  const rawPrice = content.workshopPrice;
+  const workshopPrice =
+    typeof rawPrice === 'number' && Number.isFinite(rawPrice)
+      ? rawPrice
+      : typeof rawPrice === 'string' && rawPrice.trim() && Number.isFinite(Number(rawPrice))
+        ? Number(rawPrice)
+        : null;
+
+  return { accessType, workshopPrice } as const;
 }
 
 function blocksToPlainBody(content: Record<string, unknown>) {
@@ -118,6 +133,8 @@ export async function getAdminBlogPostFromBackend(postId: string): Promise<Admin
     return null;
   }
 
+  const workshopSettings = getWorkshopSettings(post.content);
+
   return {
     id: String(post.id),
     title: post.title,
@@ -127,6 +144,8 @@ export async function getAdminBlogPostFromBackend(postId: string): Promise<Admin
     coverImage: resolveBackendAssetUrl(getStringField(post.content, 'coverImage')) || '',
     tags: post.tags.map((tag) => tag.name),
     published: post.status === 'published',
+    accessType: workshopSettings.accessType,
+    workshopPrice: workshopSettings.workshopPrice,
   };
 }
 

@@ -15,6 +15,19 @@ import {
 } from '@/lib/payments/bold';
 import { getBoldSettings } from '@/lib/system-settings';
 
+function getJsonRecord(value: Prisma.JsonValue | null) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Prisma.JsonObject)
+    : {};
+}
+
+function getWorkshopSlug(value: Prisma.JsonValue | null) {
+  const metadata = getJsonRecord(value);
+  return typeof metadata.workshopSlug === 'string' && metadata.workshopSlug.trim()
+    ? metadata.workshopSlug.trim()
+    : null;
+}
+
 export async function POST(request: Request) {
   const rawBody = await request.text();
   const signature = request.headers.get('x-bold-signature');
@@ -79,6 +92,8 @@ export async function POST(request: Request) {
     orderId = order?.id ?? null;
 
     const paymentStatus = mapBoldEventToPaymentStatus(payload.type);
+    const existingPaymentMetadata = getJsonRecord(order?.paymentMetadata ?? null);
+    const workshopSlug = getWorkshopSlug(order?.paymentMetadata ?? null);
 
     await prisma.$transaction(async (transaction) => {
       await transaction.webhookEventLog.upsert({
@@ -117,11 +132,58 @@ export async function POST(request: Request) {
           paymentStatus,
           paymentTransactionId: transactionId,
           paymentMethod: typeof payload.data?.payment_method === 'string' ? payload.data.payment_method : order.paymentMethod,
-          paymentMetadata: payload as Prisma.InputJsonValue,
+          paymentMetadata: {
+            ...existingPaymentMetadata,
+            bold: payload,
+          } as Prisma.InputJsonValue,
           lastWebhookAt: new Date(),
           status: mapBoldPaymentStatusToOrderStatus(paymentStatus, order.status),
         },
       });
+
+      if (workshopSlug && paymentStatus === 'APPROVED') {
+        await transaction.workshopAccess.upsert({
+          where: {
+            userId_postSlug: {
+              userId: order.userId,
+              postSlug: workshopSlug,
+            },
+          },
+          create: {
+            userId: order.userId,
+            postSlug: workshopSlug,
+            orderId: order.id,
+            status: 'ACTIVE',
+            metadata: {
+              paymentReference: order.paymentReference,
+              transactionId,
+            } as Prisma.InputJsonValue,
+          },
+          update: {
+            orderId: order.id,
+            status: 'ACTIVE',
+            revokedAt: null,
+            grantedAt: new Date(),
+            metadata: {
+              paymentReference: order.paymentReference,
+              transactionId,
+            } as Prisma.InputJsonValue,
+          },
+        });
+      }
+
+      if (workshopSlug && paymentStatus === 'VOIDED') {
+        await transaction.workshopAccess.updateMany({
+          where: {
+            userId: order.userId,
+            postSlug: workshopSlug,
+          },
+          data: {
+            status: 'REVOKED',
+            revokedAt: new Date(),
+          },
+        });
+      }
     });
 
     return NextResponse.json({ ok: true });

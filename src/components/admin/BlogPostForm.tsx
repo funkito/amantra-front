@@ -9,6 +9,7 @@ import {
   Button,
   Checkbox,
   FormControlLabel,
+  MenuItem,
   Paper,
   Snackbar,
   TextField,
@@ -47,6 +48,8 @@ export interface BlogPostFormInitialData {
   coverImage: string;
   tags: string[];
   published: boolean;
+  accessType: 'PUBLIC' | 'PAID_WORKSHOP';
+  workshopPrice: number | null;
 }
 
 interface BlogPostFormProps {
@@ -91,6 +94,8 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
     coverImage: initialData?.coverImage ?? '',
     tags: initialData?.tags.join(', ') ?? '',
     published: initialData?.published ?? false,
+    accessType: initialData?.accessType ?? 'PUBLIC',
+    workshopPrice: initialData?.workshopPrice ? String(initialData.workshopPrice) : '',
   });
 
   useEffect(() => {
@@ -249,6 +254,8 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
             coverImage: '',
             tags: '',
             published: false,
+            accessType: 'PUBLIC',
+            workshopPrice: '',
           });
           setManualSlug(false);
           router.refresh();
@@ -361,15 +368,20 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
                 setTagOptions([]);
               }
             }}
-            onChange={(_event, nextValue) =>
+            onChange={(_event, nextValue) => {
+              const normalizedTags = nextValue
+                .map((tag) => String(tag).trim())
+                .filter(Boolean);
+              const isWorkshop = normalizedTags.some(
+                (tag) => tag.toLowerCase() === 'talleres online'
+              );
+
               setForm((current) => ({
                 ...current,
-                tags: nextValue
-                  .map((tag) => String(tag).trim())
-                  .filter(Boolean)
-                  .join(', '),
-              }))
-            }
+                tags: normalizedTags.join(', '),
+                accessType: isWorkshop ? 'PAID_WORKSHOP' : current.accessType,
+              }));
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -390,6 +402,66 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
               },
             }}
           />
+
+          <Box
+            sx={{
+              gridColumn: { xs: '1 / -1', md: '1 / -1' },
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+              gap: 2,
+              p: 2,
+              borderRadius: '18px',
+              border: '1px solid rgba(212,175,55,0.16)',
+              background: 'rgba(212,175,55,0.04)',
+            }}
+          >
+            <Box sx={{ gridColumn: '1 / -1' }}>
+              <Typography sx={{ color: '#D4AF37', fontWeight: 700 }}>
+                Acceso al contenido
+              </Typography>
+              <Typography sx={{ color: '#9d9485', fontSize: '0.86rem', mt: 0.4 }}>
+                La etiqueta “talleres online” activa automáticamente el contenido de pago.
+              </Typography>
+            </Box>
+
+            <TextField
+              select
+              fullWidth
+              label="Tipo de acceso"
+              value={form.accessType}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  accessType: event.target.value as 'PUBLIC' | 'PAID_WORKSHOP',
+                  workshopPrice:
+                    event.target.value === 'PUBLIC' ? '' : current.workshopPrice,
+                }))
+              }
+              sx={darkFieldSx}
+            >
+              <MenuItem value="PUBLIC">Artículo público</MenuItem>
+              <MenuItem value="PAID_WORKSHOP">Taller online de pago</MenuItem>
+            </TextField>
+
+            <TextField
+              fullWidth
+              type="number"
+              label="Precio del taller (COP)"
+              value={form.workshopPrice}
+              disabled={form.accessType !== 'PAID_WORKSHOP'}
+              required={form.accessType === 'PAID_WORKSHOP'}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, workshopPrice: event.target.value }))
+              }
+              helperText={
+                form.accessType === 'PAID_WORKSHOP'
+                  ? 'Se validará antes de crear el enlace de pago.'
+                  : 'Disponible únicamente para talleres de pago.'
+              }
+              slotProps={{ htmlInput: { min: 1, step: 1000 } }}
+              sx={darkFieldSx}
+            />
+          </Box>
 
           <TextField
             fullWidth

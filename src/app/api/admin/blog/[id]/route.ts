@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { fetchBackendAdminApi } from '@/lib/admin/backend-admin-api';
 import { getSessionFromCookies } from '@/lib/auth/session';
-import { buildBlogContentData, normalizeBlogSlug, normalizeBlogTags, validateBlogPayload } from '@/lib/admin/blog';
+import {
+  buildBlogContentData,
+  normalizeBlogAccessType,
+  normalizeBlogSlug,
+  normalizeBlogTags,
+  normalizeWorkshopPrice,
+  validateBlogPayload,
+} from '@/lib/admin/blog';
 import { getBackendApiUrl } from '@/lib/backend-api';
 import { prisma } from '@/lib/prisma';
 
@@ -33,6 +40,8 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/blog
       coverImage?: string;
       tags?: string[] | string;
       published?: boolean;
+      accessType?: 'PUBLIC' | 'PAID_WORKSHOP';
+      workshopPrice?: number | string | null;
     };
 
     if (getBackendApiUrl()) {
@@ -71,13 +80,16 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/blog
         return NextResponse.json({ success: true, post: result.data });
       }
 
+      const tags = normalizeBlogTags(body.tags ?? []);
       const payload = {
         title: body.title?.trim() ?? '',
         slug: normalizeBlogSlug(body.slug?.trim() || body.title?.trim() || ''),
         excerpt: body.excerpt?.trim() ?? '',
         body: body.body?.trim() ?? '',
         coverImage: body.coverImage?.trim() ?? '',
-        tags: normalizeBlogTags(body.tags ?? []),
+        tags,
+        accessType: normalizeBlogAccessType(body.accessType, tags),
+        workshopPrice: normalizeWorkshopPrice(body.workshopPrice),
       };
 
       const validationError = validateBlogPayload(payload);
@@ -129,13 +141,16 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/blog
       return NextResponse.json({ success: true, post });
     }
 
+    const tags = normalizeBlogTags(body.tags ?? []);
     const payload = {
       title: body.title?.trim() ?? '',
       slug: normalizeBlogSlug(body.slug?.trim() || body.title?.trim() || ''),
       excerpt: body.excerpt?.trim() ?? '',
       body: body.body?.trim() ?? '',
       coverImage: body.coverImage?.trim() ?? '',
-      tags: normalizeBlogTags(body.tags ?? []),
+      tags,
+      accessType: normalizeBlogAccessType(body.accessType, tags),
+      workshopPrice: normalizeWorkshopPrice(body.workshopPrice),
     };
 
     const validationError = validateBlogPayload(payload);
@@ -162,6 +177,8 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/admin/blog
         slug: payload.slug,
         content: buildBlogContentData(payload),
         published: body.published ?? false,
+        accessType: payload.accessType,
+        workshopPrice: payload.accessType === 'PAID_WORKSHOP' ? payload.workshopPrice : null,
       },
       include: {
         author: {

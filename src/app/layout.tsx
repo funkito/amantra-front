@@ -2,6 +2,18 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 
+function getMetadataBaseUrl() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return 'http://localhost:3000';
+}
+
 const displayFont = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
@@ -14,7 +26,7 @@ const bodyFont = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(getMetadataBaseUrl()),
   title: "Amantra | Boutique online de productos de la India",
   description: "Amantra presenta una experiencia de e-commerce para productos de bienestar, hogar y moda inspirados en la India.",
   openGraph: {

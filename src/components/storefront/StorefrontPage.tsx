@@ -258,7 +258,7 @@ export default function StorefrontPage({
                     </div>
 
                     <h3>
-                      <Link href={product.productUrl ?? `/products/${product.id}`}>{product.name}</Link>
+                      <Link href={`/products/${product.slug ?? product.id}`}>{product.name}</Link>
                     </h3>
                     <ProductDescription text={product.description} />
 

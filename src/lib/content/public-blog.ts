@@ -11,6 +11,8 @@ export interface PublicBlogPost {
   coverImage: string;
   body: string;
   tags: string[];
+  accessType: 'PUBLIC' | 'PAID_WORKSHOP';
+  workshopPrice: number | null;
   createdAt: string;
 }
 
@@ -91,7 +93,27 @@ function getPostField(content: unknown, field: 'excerpt' | 'coverImage' | 'body'
   return typeof value === 'string' ? value : '';
 }
 
+function getWorkshopSettings(content: unknown) {
+  if (!content || typeof content !== 'object') {
+    return { accessType: 'PUBLIC' as const, workshopPrice: null };
+  }
+
+  const record = content as Record<string, unknown>;
+  const accessType = record.accessType === 'PAID_WORKSHOP' ? 'PAID_WORKSHOP' : 'PUBLIC';
+  const rawPrice = record.workshopPrice;
+  const workshopPrice =
+    typeof rawPrice === 'number' && Number.isFinite(rawPrice)
+      ? rawPrice
+      : typeof rawPrice === 'string' && rawPrice.trim() && Number.isFinite(Number(rawPrice))
+        ? Number(rawPrice)
+        : null;
+
+  return { accessType, workshopPrice } as const;
+}
+
 function mapPostToPublicPost(post: BackendBlogPost): PublicBlogPost {
+  const workshopSettings = getWorkshopSettings(post.content);
+
   return {
     id: String(post.id),
     slug: post.slug,
@@ -107,6 +129,8 @@ function mapPostToPublicPost(post: BackendBlogPost): PublicBlogPost {
       '',
     body: blocksToHtml(post.content),
     tags: post.tags.map((tag) => tag.name),
+    accessType: workshopSettings.accessType,
+    workshopPrice: workshopSettings.workshopPrice,
     createdAt: post.createdAt,
   };
 }
@@ -119,6 +143,10 @@ type BackendBlogListResponse = {
 type LocalPost = Awaited<ReturnType<typeof getLocalPublishedPosts>>[number];
 
 function mapLocalPostToPublicPost(post: LocalPost): PublicBlogPost {
+  const contentSettings = getWorkshopSettings(post.content);
+  const accessType = post.accessType ?? contentSettings.accessType;
+  const workshopPrice = post.workshopPrice ?? contentSettings.workshopPrice;
+
   return {
     id: post.id,
     slug: post.slug,
@@ -127,6 +155,8 @@ function mapLocalPostToPublicPost(post: LocalPost): PublicBlogPost {
     coverImage: getPostField(post.content, 'coverImage'),
     body: normalizeBlogBodyMarkup(getPostField(post.content, 'body')),
     tags: getPostTags(post.content),
+    accessType,
+    workshopPrice,
     createdAt: post.createdAt.toISOString(),
   };
 }
@@ -144,6 +174,8 @@ const getLocalPublishedPosts = cache(async () => {
       slug: true,
       title: true,
       content: true,
+      accessType: true,
+      workshopPrice: true,
       createdAt: true,
     },
   });
@@ -166,7 +198,11 @@ async function getLocalBlogList(tag?: string): Promise<BackendBlogListResponse> 
       title: post.title,
       excerpt: getPostField(post.content, 'excerpt'),
       coverImage: getPostField(post.content, 'coverImage'),
-      content: typeof post.content === 'object' && post.content ? (post.content as Record<string, unknown>) : {},
+      content: {
+        ...(typeof post.content === 'object' && post.content ? (post.content as Record<string, unknown>) : {}),
+        accessType: post.accessType,
+        workshopPrice: post.workshopPrice,
+      },
       tags: getPostTags(post.content).map((name, tagIndex) => ({
         id: index * 100 + tagIndex + 1,
         name,
@@ -247,6 +283,8 @@ export const getPublishedBlogPostBySlug = cache(async (slug: string): Promise<Pu
         slug: true,
         title: true,
         content: true,
+        accessType: true,
+        workshopPrice: true,
         createdAt: true,
       },
     });

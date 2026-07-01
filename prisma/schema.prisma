@@ -52,6 +52,16 @@ enum WebhookProcessingStatus {
   ERROR
 }
 
+enum PostAccessType {
+  PUBLIC
+  PAID_WORKSHOP
+}
+
+enum WorkshopAccessStatus {
+  ACTIVE
+  REVOKED
+}
+
 enum ShareNetwork {
   WHATSAPP
   FACEBOOK
@@ -61,55 +71,56 @@ enum ShareNetwork {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  email       String       @unique
-  password    String
-  name        String?
-  role        Role         @default(CLIENTE)
-  isActive    Boolean      @default(true)
-  orders      Order[]
-  posts       Post[]
-  shareEvents ShareEvent[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id               String           @id @default(cuid())
+  email            String           @unique
+  password         String
+  name             String?
+  role             Role             @default(CLIENTE)
+  isActive         Boolean          @default(true)
+  orders           Order[]
+  posts            Post[]
+  shareEvents      ShareEvent[]
+  workshopAccesses WorkshopAccess[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model Product {
-  id            String         @id @default(cuid())
+  id            String           @id @default(cuid())
   name          String
-  description   String         @db.Text
+  description   String           @db.Text
   basePrice     Float
-  status        ProductStatus  @default(DRAFT)
-  shippingMode  ShippingMode   @default(FIXED)
-  shippingCost  Float          @default(0)
-  shippingNotes String?        @db.Text
-  images        Json           // Cambiado a Json para máxima compatibilidad con MySQL arrays
+  status        ProductStatus    @default(DRAFT)
+  shippingMode  ShippingMode     @default(FIXED)
+  shippingCost  Float            @default(0)
+  shippingNotes String?          @db.Text
+  images        Json // Cambiado a Json para máxima compatibilidad con MySQL arrays
   variants      ProductVariant[]
   orderItems    OrderItem[]
-  tags          Tag[]          @relation("ProductTags")
+  tags          Tag[]            @relation("ProductTags")
   shareEvents   ShareEvent[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   deletedAt     DateTime?
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String      @id @default(cuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
-  sku       String   @unique
-  size      String?
-  color     String?
-  stoneType String?
-  stock     Int      @default(0)
-  price     Float?
+  sku        String      @unique
+  size       String?
+  color      String?
+  stoneType  String?
+  stock      Int         @default(0)
+  price      Float?
 }
 
 model Tag {
   id       String    @id @default(cuid())
   name     String    @unique
-  imageUrl  String?
+  imageUrl String?
   products Product[] @relation("ProductTags")
 }
 
@@ -131,6 +142,7 @@ model Order {
   paymentMetadata      Json?
   lastWebhookAt        DateTime?
   webhookEvents        WebhookEventLog[]
+  workshopAccesses     WorkshopAccess[]
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 }
@@ -174,7 +186,7 @@ model PageLayoutVersion {
   label        String
   status       String
   snapshot     Json
-  createdAt    DateTime   @db.DateTime(3) @default(now())
+  createdAt    DateTime   @default(now()) @db.DateTime(3)
 
   @@index([pageLayoutId, createdAt])
 }
@@ -194,15 +206,35 @@ model NewsletterSubscriber {
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  title     String
-  slug      String   @unique
-  content   Json
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  published Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  title         String
+  slug          String         @unique
+  content       Json
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id])
+  published     Boolean        @default(false)
+  accessType    PostAccessType @default(PUBLIC)
+  workshopPrice Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model WorkshopAccess {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postSlug  String               @db.VarChar(255)
+  orderId   String
+  order     Order                @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  status    WorkshopAccessStatus @default(ACTIVE)
+  grantedAt DateTime             @default(now())
+  revokedAt DateTime?
+  metadata  Json?
+
+  // El slug es estable tanto con Prisma local como con la API MariaDB externa.
+  @@unique([userId, postSlug])
+  @@index([postSlug, status])
+  @@index([orderId])
 }
 
 model System_Setting {

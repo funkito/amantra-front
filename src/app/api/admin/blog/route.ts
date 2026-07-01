@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { fetchBackendAdminApi } from '@/lib/admin/backend-admin-api';
 import { getSessionFromCookies } from '@/lib/auth/session';
-import { buildBlogContentData, normalizeBlogSlug, normalizeBlogTags, validateBlogPayload } from '@/lib/admin/blog';
+import {
+  buildBlogContentData,
+  normalizeBlogAccessType,
+  normalizeBlogSlug,
+  normalizeBlogTags,
+  normalizeWorkshopPrice,
+  validateBlogPayload,
+} from '@/lib/admin/blog';
 import { getBackendApiUrl } from '@/lib/backend-api';
 import { prisma } from '@/lib/prisma';
 
@@ -31,15 +38,20 @@ export async function POST(request: Request) {
       coverImage?: string;
       tags?: string[] | string;
       published?: boolean;
+      accessType?: 'PUBLIC' | 'PAID_WORKSHOP';
+      workshopPrice?: number | string | null;
     };
 
+    const tags = normalizeBlogTags(body.tags ?? []);
     const payload = {
       title: body.title?.trim() ?? '',
       slug: normalizeBlogSlug(body.slug?.trim() || body.title?.trim() || ''),
       excerpt: body.excerpt?.trim() ?? '',
       body: body.body?.trim() ?? '',
       coverImage: body.coverImage?.trim() ?? '',
-      tags: normalizeBlogTags(body.tags ?? []),
+      tags,
+      accessType: normalizeBlogAccessType(body.accessType, tags),
+      workshopPrice: normalizeWorkshopPrice(body.workshopPrice),
     };
 
     const validationError = validateBlogPayload(payload);
@@ -90,6 +102,8 @@ export async function POST(request: Request) {
         content: buildBlogContentData(payload),
         authorId: session.userId,
         published: body.published ?? false,
+        accessType: payload.accessType,
+        workshopPrice: payload.accessType === 'PAID_WORKSHOP' ? payload.workshopPrice : null,
       },
       include: {
         author: {

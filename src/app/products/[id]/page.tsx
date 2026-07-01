@@ -153,30 +153,34 @@ export default async function ProductPublicPage(props: PageProps<'/products/[id]
               <h2>Productos relacionados</h2>
             </div>
             <div className="related-grid">
-              {relatedProducts.map((relatedProduct) => (
-                <article key={relatedProduct.id} className="related-card">
-                  <div className="related-card-visual">
-                    {relatedProduct.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={relatedProduct.imageUrl} alt={relatedProduct.name} className="related-card-image" />
-                    ) : (
-                      <div className={`product-visual bg-gradient-to-br ${relatedProduct.accent}`}>
-                        <span>{relatedProduct.imageLabel}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="related-card-body">
-                    <h3>
-                      <Link href={relatedProduct.productUrl ?? `/products/${relatedProduct.id}`}>{relatedProduct.name}</Link>
-                    </h3>
-                    <p>{relatedProduct.description}</p>
-                    <strong>{currency.format(relatedProduct.price)}</strong>
-                    <Link href={relatedProduct.productUrl ?? `/products/${relatedProduct.id}`} className="related-card-link">
-                      Ver producto
-                    </Link>
-                  </div>
-                </article>
-              ))}
+              {relatedProducts.map((relatedProduct) => {
+                const relatedProductHref = `/products/${relatedProduct.slug ?? relatedProduct.id}`;
+
+                return (
+                  <article key={relatedProduct.id} className="related-card">
+                    <div className="related-card-visual">
+                      {relatedProduct.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={relatedProduct.imageUrl} alt={relatedProduct.name} className="related-card-image" />
+                      ) : (
+                        <div className={`product-visual bg-gradient-to-br ${relatedProduct.accent}`}>
+                          <span>{relatedProduct.imageLabel}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="related-card-body">
+                      <h3>
+                        <Link href={relatedProductHref}>{relatedProduct.name}</Link>
+                      </h3>
+                      <p>{relatedProduct.description}</p>
+                      <strong>{currency.format(relatedProduct.price)}</strong>
+                      <Link href={relatedProductHref} className="related-card-link">
+                        Ver producto
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
         ) : null}
