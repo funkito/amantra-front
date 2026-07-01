@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       excerpt?: string;
       body?: string;
       coverImage?: string;
+      videoUrl?: string;
       tags?: string[] | string;
       published?: boolean;
       accessType?: 'PUBLIC' | 'PAID_WORKSHOP';
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       excerpt: body.excerpt?.trim() ?? '',
       body: body.body?.trim() ?? '',
       coverImage: body.coverImage?.trim() ?? '',
+      videoUrl: body.videoUrl?.trim() ?? '',
       tags,
       accessType: normalizeBlogAccessType(body.accessType, tags),
       workshopPrice: normalizeWorkshopPrice(body.workshopPrice),

@@ -36,6 +36,7 @@ interface BlogPayload {
   excerpt: string;
   body: string;
   coverImage?: string;
+  videoUrl?: string;
   tags: string[];
   accessType: BlogAccessType;
   workshopPrice: number | null;
@@ -76,6 +77,17 @@ export function validateBlogPayload(payload: BlogPayload) {
     return 'El precio del taller debe ser mayor que cero.';
   }
 
+  if (payload.videoUrl?.trim()) {
+    try {
+      const videoUrl = new URL(payload.videoUrl);
+      if (videoUrl.protocol !== 'https:') {
+        return 'La URL del video debe usar HTTPS.';
+      }
+    } catch {
+      return 'La URL del video no es válida.';
+    }
+  }
+
   return null;
 }
 
@@ -83,6 +95,7 @@ export function buildBlogContentData(payload: BlogPayload) {
   return {
     excerpt: payload.excerpt.trim(),
     coverImage: payload.coverImage?.trim() ?? '',
+    videoUrl: payload.videoUrl?.trim() ?? '',
     body: sanitizeBlogHtml(payload.body),
     tags: payload.tags,
     accessType: payload.accessType,

@@ -45,13 +45,14 @@ export type AdminBackendBlogFormData = {
   excerpt: string;
   body: string;
   coverImage: string;
+  videoUrl: string;
   tags: string[];
   published: boolean;
   accessType: 'PUBLIC' | 'PAID_WORKSHOP';
   workshopPrice: number | null;
 };
 
-function getStringField(content: Record<string, unknown>, field: 'excerpt' | 'body' | 'coverImage') {
+function getStringField(content: Record<string, unknown>, field: 'excerpt' | 'body' | 'coverImage' | 'videoUrl') {
   const value = content[field];
   return typeof value === 'string' ? value : '';
 }
@@ -142,6 +143,7 @@ export async function getAdminBlogPostFromBackend(postId: string): Promise<Admin
     excerpt: getStringField(post.content, 'excerpt'),
     body: blocksToPlainBody(post.content),
     coverImage: resolveBackendAssetUrl(getStringField(post.content, 'coverImage')) || '',
+    videoUrl: getStringField(post.content, 'videoUrl'),
     tags: post.tags.map((tag) => tag.name),
     published: post.status === 'published',
     accessType: workshopSettings.accessType,

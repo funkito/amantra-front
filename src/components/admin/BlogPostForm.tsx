@@ -17,6 +17,9 @@ import {
 } from '@mui/material';
 import RichTextEditor, { buildInlineImageMarkup } from '@/components/admin/RichTextEditor';
 
+const MAX_WORKSHOP_VIDEO_SIZE = 200 * 1024 * 1024;
+const ALLOWED_WORKSHOP_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+
 const darkFieldSx = {
   '& .MuiOutlinedInput-root': {
     color: '#FFFFF0',
@@ -46,6 +49,7 @@ export interface BlogPostFormInitialData {
   excerpt: string;
   body: string;
   coverImage: string;
+  videoUrl: string;
   tags: string[];
   published: boolean;
   accessType: 'PUBLIC' | 'PAID_WORKSHOP';
@@ -71,6 +75,7 @@ function slugify(value: string) {
 export default function BlogPostForm({ mode = 'create', postId, initialData }: BlogPostFormProps) {
   const router = useRouter();
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<{ severity: 'success' | 'error'; message: string } | null>(null);
   const [mediaItems, setMediaItems] = useState<Array<{ id: string; label: string; url: string; source: string }>>([]);
@@ -85,6 +90,13 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
     type: 'idle',
     message: '',
   });
+  const [videoUploadState, setVideoUploadState] = useState<{
+    type: 'idle' | 'loading' | 'success' | 'error';
+    message: string;
+  }>({
+    type: 'idle',
+    message: '',
+  });
   const [manualSlug, setManualSlug] = useState(Boolean(initialData?.slug));
   const [form, setForm] = useState({
     title: initialData?.title ?? '',
@@ -92,6 +104,7 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
     excerpt: initialData?.excerpt ?? '',
     body: initialData?.body ?? '',
     coverImage: initialData?.coverImage ?? '',
+    videoUrl: initialData?.videoUrl ?? '',
     tags: initialData?.tags.join(', ') ?? '',
     published: initialData?.published ?? false,
     accessType: initialData?.accessType ?? 'PUBLIC',
@@ -219,6 +232,113 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
     }
   }
 
+  async function handleVideoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!ALLOWED_WORKSHOP_VIDEO_TYPES.has(file.type)) {
+      setVideoUploadState({
+        type: 'error',
+        message: 'Formato no permitido. Usa MP4, WEBM o MOV.',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_WORKSHOP_VIDEO_SIZE) {
+      setVideoUploadState({
+        type: 'error',
+        message: 'El video supera los 200MB permitidos.',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    setVideoUploadState({
+      type: 'loading',
+      message: 'Preparando subida segura a Cloudinary...',
+    });
+
+    try {
+      const signatureResponse = await fetch('/api/admin/media/video-signature', {
+        method: 'POST',
+      });
+      const signaturePayload = (await signatureResponse.json()) as {
+        error?: string;
+        cloudName?: string;
+        apiKey?: string;
+        timestamp?: number;
+        folder?: string;
+        publicId?: string;
+        signature?: string;
+      };
+
+      if (
+        !signatureResponse.ok ||
+        !signaturePayload.cloudName ||
+        !signaturePayload.apiKey ||
+        !signaturePayload.timestamp ||
+        !signaturePayload.folder ||
+        !signaturePayload.publicId ||
+        !signaturePayload.signature
+      ) {
+        throw new Error(signaturePayload.error ?? 'No fue posible firmar la subida del video.');
+      }
+
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append('file', file);
+      cloudinaryFormData.append('api_key', signaturePayload.apiKey);
+      cloudinaryFormData.append('timestamp', String(signaturePayload.timestamp));
+      cloudinaryFormData.append('folder', signaturePayload.folder);
+      cloudinaryFormData.append('public_id', signaturePayload.publicId);
+      cloudinaryFormData.append('signature', signaturePayload.signature);
+
+      setVideoUploadState({
+        type: 'loading',
+        message: 'Subiendo video directamente a Cloudinary...',
+      });
+
+      const uploadResponse = await fetch(
+        'https://api.cloudinary.com/v1_1/' +
+          encodeURIComponent(signaturePayload.cloudName) +
+          '/video/upload',
+        {
+          method: 'POST',
+          body: cloudinaryFormData,
+        }
+      );
+      const uploadPayload = (await uploadResponse.json()) as {
+        secure_url?: string;
+        error?: { message?: string };
+      };
+
+      if (!uploadResponse.ok || !uploadPayload.secure_url) {
+        throw new Error(uploadPayload.error?.message ?? 'Cloudinary no devolvió una URL válida.');
+      }
+
+      setForm((current) => ({
+        ...current,
+        videoUrl: uploadPayload.secure_url ?? '',
+      }));
+      setVideoUploadState({
+        type: 'success',
+        message: 'Video subido correctamente. Guarda el artículo para conservarlo.',
+      });
+    } catch (error) {
+      setVideoUploadState({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'No fue posible subir el video.',
+      });
+    } finally {
+      if (videoInputRef.current) {
+        videoInputRef.current.value = '';
+      }
+    }
+  }
+
   function insertImageIntoBody(imageUrl: string) {
     const snippet = buildInlineImageMarkup(imageUrl, '', 'medium');
 
@@ -252,6 +372,7 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
             excerpt: '',
             body: '',
             coverImage: '',
+            videoUrl: '',
             tags: '',
             published: false,
             accessType: 'PUBLIC',
@@ -648,6 +769,132 @@ export default function BlogPostForm({ mode = 'create', postId, initialData }: B
                   objectFit: 'cover',
                 }}
               />
+            </Box>
+          ) : null}
+        </Box>
+
+        <Box
+          sx={{
+            mt: 2,
+            display: 'grid',
+            gap: 1.4,
+            p: 2,
+            borderRadius: '20px',
+            border: '1px solid rgba(212,175,55,0.14)',
+            background: 'rgba(255,255,255,0.02)',
+          }}
+        >
+          <Box>
+            <Typography sx={{ color: '#D4AF37', fontWeight: 700 }}>Video del taller</Typography>
+            <Typography sx={{ color: '#8f846d', fontSize: '0.9rem', mt: 0.4 }}>
+              Se sube directamente a Cloudinary. MP4, WEBM o MOV, máximo 200MB.
+            </Typography>
+          </Box>
+
+          <TextField
+            fullWidth
+            label="URL del video"
+            placeholder="https://res.cloudinary.com/..."
+            value={form.videoUrl}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, videoUrl: event.target.value }))
+            }
+            helperText="Puedes subir un archivo o pegar una URL HTTPS."
+            sx={darkFieldSx}
+          />
+
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            onChange={handleVideoUpload}
+            style={{ display: 'none' }}
+          />
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.2 }}>
+            <Button
+              type="button"
+              variant="outlined"
+              disabled={videoUploadState.type === 'loading'}
+              onClick={() => videoInputRef.current?.click()}
+              sx={{
+                borderColor: 'rgba(212,175,55,0.24)',
+                color: '#D4AF37',
+                borderRadius: '999px',
+              }}
+            >
+              {videoUploadState.type === 'loading' ? 'Subiendo video...' : 'Subir video'}
+            </Button>
+
+            {form.videoUrl ? (
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => {
+                  setForm((current) => ({ ...current, videoUrl: '' }));
+                  setVideoUploadState({ type: 'idle', message: '' });
+                }}
+                sx={{
+                  borderColor: 'rgba(255,110,110,0.3)',
+                  color: '#ff9e95',
+                  borderRadius: '999px',
+                }}
+              >
+                Quitar video
+              </Button>
+            ) : null}
+          </Box>
+
+          {videoUploadState.type !== 'idle' ? (
+            <Box
+              sx={{
+                borderRadius: '14px',
+                px: 1.5,
+                py: 1.1,
+                fontSize: '0.92rem',
+                color:
+                  videoUploadState.type === 'error'
+                    ? '#ffb3b3'
+                    : videoUploadState.type === 'success'
+                      ? '#9ae6b4'
+                      : '#FFFFF0',
+                border:
+                  videoUploadState.type === 'error'
+                    ? '1px solid rgba(255,99,99,0.28)'
+                    : videoUploadState.type === 'success'
+                      ? '1px solid rgba(72,187,120,0.28)'
+                      : '1px solid rgba(212,175,55,0.12)',
+                background:
+                  videoUploadState.type === 'error'
+                    ? 'rgba(255,99,99,0.08)'
+                    : videoUploadState.type === 'success'
+                      ? 'rgba(72,187,120,0.08)'
+                      : 'rgba(255,255,255,0.02)',
+              }}
+            >
+              {videoUploadState.message}
+            </Box>
+          ) : null}
+
+          {form.videoUrl ? (
+            <Box
+              sx={{
+                overflow: 'hidden',
+                borderRadius: '18px',
+                border: '1px solid rgba(212,175,55,0.16)',
+                background: '#050505',
+                maxWidth: 720,
+              }}
+            >
+              <video
+                src={form.videoUrl}
+                controls
+                preload="metadata"
+                poster={form.coverImage || undefined}
+                style={{ display: 'block', width: '100%', maxHeight: 420 }}
+              >
+                Tu navegador no puede reproducir este video.
+              </video>
             </Box>
           ) : null}
         </Box>

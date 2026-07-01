@@ -26,6 +26,7 @@ export default async function AdminBlogPreviewPage(props: PageProps<'/admin_grou
   const contentObject = typeof post.content === 'object' && post.content ? (post.content as Record<string, unknown>) : {};
   const excerpt = typeof contentObject.excerpt === 'string' ? contentObject.excerpt : '';
   const coverImage = typeof contentObject.coverImage === 'string' ? contentObject.coverImage : '';
+  const videoUrl = typeof contentObject.videoUrl === 'string' ? contentObject.videoUrl : '';
   const body = typeof contentObject.body === 'string' ? normalizeBlogBodyMarkup(contentObject.body) : '';
   const tags = getPostTags(post.content);
   const relatedProducts = await getRelatedProductsByTags(null, tags, 3);
@@ -108,6 +109,24 @@ export default async function AdminBlogPreviewPage(props: PageProps<'/admin_grou
               </span>
             ))}
           </div>
+        ) : null}
+        {videoUrl ? (
+          <video
+            src={videoUrl}
+            controls
+            preload="metadata"
+            poster={coverImage || undefined}
+            style={{
+              display: 'block',
+              width: '100%',
+              maxHeight: 560,
+              borderRadius: 24,
+              background: '#050505',
+              border: '1px solid rgba(212,175,55,0.18)',
+            }}
+          >
+            Tu navegador no puede reproducir este video.
+          </video>
         ) : null}
         <div className="blog-rich-content" dangerouslySetInnerHTML={{ __html: body }} />
 

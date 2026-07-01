@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getRelatedProductsByTags } from '@/lib/catalog/public-products';
-import { getPublishedBlogPostBySlug } from '@/lib/content/public-blog';
+import {
+  getProtectedBlogPostById,
+  getPublishedBlogPostBySlug,
+} from '@/lib/content/public-blog';
 import SiteMenu from '@/components/storefront/SiteMenu';
 import WorkshopPaywall from '@/components/storefront/WorkshopPaywall';
 import { getSessionFromCookies, isAdminRole } from '@/lib/auth/session';
@@ -46,6 +49,11 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
   const paymentReturned = Array.isArray(resolvedSearchParams.payment)
     ? resolvedSearchParams.payment.includes('return')
     : resolvedSearchParams.payment === 'return';
+  const protectedPost =
+    isPaidWorkshop && hasWorkshopAccess
+      ? await getProtectedBlogPostById(post.id)
+      : null;
+  const visiblePost = protectedPost ?? post;
 
   return (
     <main
@@ -97,10 +105,31 @@ export default async function BlogPostPage({ params, searchParams }: BlogPostPag
           </div>
         ) : null}
         {hasWorkshopAccess ? (
-          <div
-            className="blog-rich-content"
-            dangerouslySetInnerHTML={{ __html: post.body }}
-          />
+          <>
+            {visiblePost.videoUrl ? (
+              <video
+                src={visiblePost.videoUrl}
+                controls
+                preload="metadata"
+                poster={post.coverImage || undefined}
+                controlsList="nodownload"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  maxHeight: 560,
+                  borderRadius: 24,
+                  background: '#050505',
+                  border: '1px solid rgba(212,175,55,0.18)',
+                }}
+              >
+                Tu navegador no puede reproducir este video.
+              </video>
+            ) : null}
+            <div
+              className="blog-rich-content"
+              dangerouslySetInnerHTML={{ __html: visiblePost.body }}
+            />
+          </>
         ) : (
           <WorkshopPaywall
             slug={post.slug}

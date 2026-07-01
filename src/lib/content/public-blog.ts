@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { fetchBackendAdminApi } from '@/lib/admin/backend-admin-api';
 import { fetchBackendApi, getBackendApiUrl, resolveBackendAssetUrl } from '@/lib/backend-api';
 import { normalizeBlogBodyMarkup } from '@/lib/content/blog-rich-text';
 import { prisma } from '@/lib/prisma';
@@ -9,6 +10,7 @@ export interface PublicBlogPost {
   title: string;
   excerpt: string;
   coverImage: string;
+  videoUrl: string;
   body: string;
   tags: string[];
   accessType: 'PUBLIC' | 'PAID_WORKSHOP';
@@ -84,7 +86,7 @@ function blocksToHtml(content: Record<string, unknown>) {
   return normalizeBlogBodyMarkup(html);
 }
 
-function getPostField(content: unknown, field: 'excerpt' | 'coverImage' | 'body') {
+function getPostField(content: unknown, field: 'excerpt' | 'coverImage' | 'videoUrl' | 'body') {
   if (!content || typeof content !== 'object') {
     return '';
   }
@@ -127,6 +129,7 @@ function mapPostToPublicPost(post: BackendBlogPost): PublicBlogPost {
           (typeof post.content.coverImage === 'string' ? post.content.coverImage : '')
       ) ||
       '',
+    videoUrl: getPostField(post.content, 'videoUrl'),
     body: blocksToHtml(post.content),
     tags: post.tags.map((tag) => tag.name),
     accessType: workshopSettings.accessType,
@@ -153,6 +156,7 @@ function mapLocalPostToPublicPost(post: LocalPost): PublicBlogPost {
     title: post.title,
     excerpt: getPostField(post.content, 'excerpt'),
     coverImage: getPostField(post.content, 'coverImage'),
+    videoUrl: getPostField(post.content, 'videoUrl'),
     body: normalizeBlogBodyMarkup(getPostField(post.content, 'body')),
     tags: getPostTags(post.content),
     accessType,
@@ -292,6 +296,26 @@ export const getPublishedBlogPostBySlug = cache(async (slug: string): Promise<Pu
     return post ? mapLocalPostToPublicPost(post) : null;
   }
 });
+
+export async function getProtectedBlogPostById(postId: string): Promise<PublicBlogPost | null> {
+  if (!getBackendApiUrl()) {
+    return null;
+  }
+
+  try {
+    const response = await fetchBackendAdminApi('/blog-posts/' + encodeURIComponent(postId));
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload = (await response.json()) as { data?: BackendBlogPost };
+    return payload.data ? mapPostToPublicPost(payload.data) : null;
+  } catch (error) {
+    console.error('Protected workshop content fetch failed:', error);
+    return null;
+  }
+}
 
 export function getPostTags(content: unknown) {
   if (!content || typeof content !== 'object') {

@@ -4,14 +4,24 @@ import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 export const MAX_MEDIA_IMAGE_SIZE = 5 * 1024 * 1024;
 export const ALLOWED_MEDIA_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-cloudinary.config({
-  cloudinary_url: process.env.CLOUDINARY_URL,
-});
+function configureCloudinary() {
+  const cloudinaryUrl = process.env.CLOUDINARY_URL;
 
-function uploadImageBuffer(buffer: Buffer, fileName: string) {
-  if (!process.env.CLOUDINARY_URL) {
+  if (!cloudinaryUrl) {
     throw new Error('Cloudinary no está configurado. Define CLOUDINARY_URL para subir imágenes.');
   }
+
+  const parsedUrl = new URL(cloudinaryUrl);
+  cloudinary.config({
+    cloud_name: parsedUrl.hostname,
+    api_key: decodeURIComponent(parsedUrl.username),
+    api_secret: decodeURIComponent(parsedUrl.password),
+    secure: true,
+  });
+}
+
+function uploadImageBuffer(buffer: Buffer, fileName: string) {
+  configureCloudinary();
 
   return new Promise<UploadApiResponse>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(

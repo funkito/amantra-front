@@ -79,6 +79,7 @@ export default async function AdminEditBlogPostPage(props: PageProps<'/admin_gro
           excerpt: typeof contentObject.excerpt === 'string' ? contentObject.excerpt : '',
           body: typeof contentObject.body === 'string' ? contentObject.body : '',
           coverImage: typeof contentObject.coverImage === 'string' ? contentObject.coverImage : '',
+          videoUrl: typeof contentObject.videoUrl === 'string' ? contentObject.videoUrl : '',
           tags: getPostTags(post.content),
           published: post.published,
           accessType: post.accessType,
